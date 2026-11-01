@@ -1,6 +1,7 @@
 package pl.olafcio.nocrash;
 
 import org.jetbrains.annotations.NotNull;
+import pl.olafcio.avoid.api.Avoid;
 import pl.olafcio.avoid.platform.AvoidWrappedLoader;
 import pl.olafcio.avoid_loader.interfaces.IMod;
 import pl.olafcio.avoid_loader.interfaces.IModFile;
@@ -18,9 +19,15 @@ public class NoCrashEarlyInjector implements IModLoader {
             var nc_jar = getJarPath();
 
             var minecraftProcess = ProcessHandle.current();
+            var modloader = AvoidWrappedLoader.isForge()    ? "FORGE"    :
+                            AvoidWrappedLoader.isNeoForge() ? "NEOFORGE" :
+                            AvoidWrappedLoader.isFabric()   ? "FABRIC"   :
+                            AvoidWrappedLoader.isSponge()   ? "SPONGE"   :
+                            AvoidWrappedLoader.isPaper()    ? "PAPER"    :
+                                                              null;
 
             new ProcessBuilder()
-                    .command(minecraftProcess.info().command().orElseThrow(), "-Xmx256M", "-Xms256M", "-jar", nc_jar, String.valueOf(minecraftProcess.pid()))
+                    .command(minecraftProcess.info().command().orElseThrow(), "-Xmx256M", "-Xms256M", "-jar", nc_jar, String.valueOf(minecraftProcess.pid()), modloader, Avoid.getBrand(), Avoid.getVersion())
                     .redirectInput(ProcessBuilder.Redirect.INHERIT)
                     .redirectOutput(nc_logs)
                     .redirectError(nc_logs)

@@ -123,7 +123,7 @@ processResources {
     inputs.property "commit_amount_total", getCommitAmountTotal()
 
     filteringCharset "UTF-8"
-    filesMatching(["avoid.mod.json"]) {
+    filesMatching(["avoid.mod.json", "nocrash_version.txt"]) {
         expand inputs.properties
     }
 }
