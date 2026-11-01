@@ -72,6 +72,8 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    implementation("org.yaml:snakeyaml:2.7")
+
     if (project.properties.minecraft != nativeAvoidMinecraft()) {
         modRuntimeOnly "pl.olafcio:avoid:${project.properties.avoid_version}+${project.properties.minecraft}"
     } else {
