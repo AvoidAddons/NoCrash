@@ -1,0 +1,14 @@
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+
+tasks.register("addToMinecraft") {
+    dependsOn build
+    doLast {
+        Files.copy(
+                (Path) ext.buildFile,
+                Path.of(System.getenv("APPDATA")).resolve(".minecraft").resolve("mods").resolve(ext.buildFile.getFileName().toString()),
+                StandardCopyOption.REPLACE_EXISTING
+        )
+    }
+}

@@ -1,0 +1,29 @@
+$ minecraft
+minecraft={@name}
+
+// Note that these things are not comments!
+// To use this file, download Funcutter here -> https://github.com/Olafcio1/Funcutter
+
+# 1.21.8
+: minecraft
+
+# 1.21.10
+: minecraft
+
+# 1.21.11
+: minecraft
+
+# 26.1
+: minecraft
+
+# 26.1.1
+: minecraft
+
+# 26.1.2
+: minecraft
+
+# 26.2
+: minecraft
+
+# 26.3-snapshot-10
+: minecraft

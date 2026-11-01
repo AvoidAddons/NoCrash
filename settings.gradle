@@ -1,0 +1,10 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+    }
+}
+
+rootProject.name = 'Avoid-Mod-Template'

@@ -1,0 +1,13 @@
+{
+  "__schema": 1,
+
+  "id": "examplemod",
+  "version": "1.0",
+  "version-system": "semver",
+
+  "name": "ExampleMod",
+  "author": "You",
+  "description": "An example mod made with AvoidLib.",
+
+  "main-class": "com.example.mymod.MyMod"
+}

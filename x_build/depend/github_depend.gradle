@@ -1,0 +1,70 @@
+import java.nio.file.Files
+import java.util.function.Predicate
+
+apply from: rootProject.file("x_build/api/github_api.gradle")
+
+String github(String repository, String versionName = "latest", Predicate<String> jarFinder = { _ -> true }, Predicate<String> sourcesJarFinder = { _ -> false }) {
+    def repoName = repository.substring(repository.indexOf("/") + 1)
+    var libs = project.file("libs").toPath()
+
+    Files.createDirectories(libs)
+
+    if (versionName == "latest") {
+        try (var allLibs = Files.list(libs)) {
+            String ret = null
+
+            allLibs.forEach {
+                def fn = it.getFileName().toString()
+                if (fn.startsWith(repoName + "-") && fn.endsWith(".jar") && System.currentTimeMillis() - Files.getLastModifiedTime(it).toMillis() < 1000*60*60*24*3)
+                    ret = ":" + repoName + ":" + fn.substring(0, fn.length() - 4).split("-", 2)[1]
+            }
+
+            if (ret != null)
+                return ret
+        }
+    } else {
+        if (libs.resolve(repoName + "-" + versionName + ".jar").toFile().isFile())
+            return ":" + repoName + ":" + versionName
+    }
+
+    var version = github_getRelease(repository, versionName)
+    def repoVersion = version['tag_name'].substring(1)
+
+    var jar = libs.resolve(repoName + "-" + repoVersion + ".jar")
+    var jarSources = libs.resolve(repoName + "-" + repoVersion + "-sources.jar")
+
+    for (var asset : version['assets']) {
+        if (jarFinder(asset['name'])) {
+            URI.create(asset['browser_download_url'] as String) \
+               .toURL() \
+               .withInputStream { i -> jar.withOutputStream { it << i }}
+
+            break
+        }
+    }
+
+    for (var asset : version['assets']) {
+        if (sourcesJarFinder(asset['name'])) {
+            URI.create(asset['browser_download_url'] as String) \
+               .toURL() \
+               .withInputStream { i -> jarSources.withOutputStream { it << i }}
+
+            break
+        }
+    }
+
+    return ":" + repoName + ":" + repoVersion
+}
+
+String github(kwargs, repository) {
+    return github(
+            (String)repository,
+            'versionName' in kwargs ? (String)kwargs['versionName'] : "latest",
+            'jarFinder' in kwargs ? (Predicate<String>)kwargs['jarFinder'] : { _ -> true },
+            'sourcesJarFinder' in kwargs ? (Predicate<String>)kwargs['sourcesJarFinder'] : { _ -> false }
+    )
+}
+
+ext {
+    github = this.&github
+}

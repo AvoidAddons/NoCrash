@@ -1,0 +1,40 @@
+import groovy.json.JsonSlurper
+
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
+import java.util.zip.ZipFile
+
+/**
+ * Reads the `fabric.mod.json` file in the specified archive.
+ */
+static Object readFMJ(Path path) {
+    try (var zip = new ZipFile(path.toFile())) {
+        var entry = zip.getEntry("fabric.mod.json")
+        if (entry == null)
+            throw new RuntimeException("[mod_info] [readFMJ] No 'fabric.mod.json' file in: %s".formatted(path.toAbsolutePath().toString()))
+
+        try (var stream = zip.getInputStream(entry)) {
+            return new JsonSlurper().parseText(new String(stream.readAllBytes(), StandardCharsets.UTF_8))
+        }
+    }
+}
+
+/**
+ * Reads the `avoid.mod.json` file in the specified archive.
+ */
+static Object readAMJ(Path path) {
+    try (var zip = new ZipFile(path.toFile())) {
+        var entry = zip.getEntry("avoid.mod.json")
+        if (entry == null)
+            throw new RuntimeException("[mod_info] [readAMJ] No 'avoid.mod.json' file in: %s".formatted(path.toAbsolutePath().toString()))
+
+        try (var stream = zip.getInputStream(entry)) {
+            return new JsonSlurper().parseText(new String(stream.readAllBytes(), StandardCharsets.UTF_8))
+        }
+    }
+}
+
+ext {
+    readFMJ = this.&readFMJ
+    readAMJ = this.&readAMJ
+}

@@ -1,0 +1,10 @@
+import java.nio.file.Path
+
+private Path getAvoidZIP() {
+    var path = tasks.jar.archiveFile.get().asFile.toPath()
+    var str = path.toString().split("/").last()
+
+    return path.parent.resolve(str.substring(0, str.length() - 4) + ".avoid.zip")
+}
+
+project.ext.buildFile = getAvoidZIP()

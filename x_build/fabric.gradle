@@ -1,0 +1,36 @@
+import java.nio.file.Files
+
+return { Object project ->
+    final boolean has_mappings = \
+    (
+          project.properties.minecraft.startsWith("0.") ||
+          project.properties.minecraft.startsWith("1.")
+    )
+
+    if (has_mappings) {
+        project.apply plugin: 'fabric-loom'
+        project.ext.fabricLoaded = true
+    } else {
+        project.apply plugin: 'net.fabricmc.fabric-loom'
+    }
+
+    project.loom {}
+
+    project.dependencies {
+        minecraft "com.mojang:minecraft:${project.properties.minecraft}"
+
+        if (has_mappings) {
+            mappings project.loom.officialMojangMappings()
+        }
+
+        final var mod = obj -> has_mappings ? modImplementation(obj) : implementation(obj)
+
+        mod "net.fabricmc:fabric-loader:${project.properties.fabric_loader}"
+    }
+
+    project.tasks.runClient.dependsOn project.tasks.build
+
+    if (project.ext.has("buildFile"))
+        try             { Files.createSymbolicLink(project.file("run/mods/" + project.ext.buildFile.getFileName().toString() + ".jar").toPath(), project.ext.buildFile) }
+        catch (ignored) {}
+}

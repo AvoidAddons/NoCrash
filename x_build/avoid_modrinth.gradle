@@ -1,0 +1,73 @@
+import java.net.http.HttpClient
+import java.nio.file.Files
+import java.nio.file.Path
+
+var libs = project.file("libs").toPath()
+
+Path avoid = project.file("libs/Avoid-${properties.avoid_version}+${properties.minecraft}.jar").toPath()
+
+ext.libs         = libs
+ext.avoidRuntime = avoid
+
+apply from: project.file("x_build/api/modrinth_api.gradle")
+
+@SuppressWarnings('GrMethodMayBeStatic')
+void downloadAvoidRuntime_fun() {
+    Files.createDirectories(libs)
+
+    var client = HttpClient.newHttpClient()
+
+    var versions = modrinth_fetchProject(client, "avoid")['versions']
+    var version
+
+    int adding
+
+    if (properties.avoid_version !== "latest") {
+        version = properties.avoid_version
+        adding  = 1
+    } else {
+        version = versions.last()
+        adding  = -1
+    }
+
+    version = modrinth_fetchVersion(client, "avoid", version)
+
+    def ok = false
+    def index = versions.indexOf(version['id'])
+
+    while (true) {
+        if (properties.minecraft !in version['game_versions'] || 'fabric' !in version['loaders']) {
+            var ver = versions[index += adding]
+            if (ver == null)
+                break
+
+            version = modrinth_fetchVersion(client, "avoid", ver)
+
+            if (version['version_number'] != properties.avoid_version)
+                break
+        } else {
+            ok = true;
+            break;
+        }
+    }
+
+    if (!ok)
+        throw new RuntimeException("Failed to find Avoid ${properties.avoid_version} for Minecraft ${properties.minecraft}")
+
+    URI.create(version['files'][0]['url'] as String) \
+       .toURL() \
+       .withInputStream{ i -> avoidRuntime.withOutputStream{ it << i }}
+}
+
+tasks.register("downloadAvoidRuntime") {
+    doFirst {
+        downloadAvoidRuntime_fun()
+    }
+}
+
+if (project.properties.minecraft != nativeAvoidMinecraft()) {
+    if (!Files.isRegularFile(avoidRuntime))
+        downloadAvoidRuntime_fun()
+} else {
+    ext.avoidRuntime = ext.avoidJAR
+}

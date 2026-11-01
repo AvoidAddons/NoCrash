@@ -1,0 +1,52 @@
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+
+class AvoidPlus {
+    public boolean signatures = false
+}
+
+project.extensions.create("avoid", AvoidPlus)
+effectiveJar.doLast {
+    var ext = project.extensions.getByType(AvoidPlus)
+    if (ext.signatures) {
+        var bos = new ByteArrayOutputStream()
+        var zos = new ZipOutputStream(bos)
+
+        var signatures = new StringBuilder()
+        var file = (File) effectiveJar.archiveFile.get().asFile
+
+        try (var zip = new ZipFile(file)) {
+            var entries = zip.entries()
+
+            while (entries.hasMoreElements()) {
+                var entry = entries.nextElement()
+                var hash
+
+                try (var stream = zip.getInputStream(entry)) {
+                    var content = stream.readAllBytes()
+
+                    hash = content.digest('SHA-1')
+
+                    zos.putNextEntry(entry)
+                    zos.write(content)
+                }
+
+                signatures << "${entry.name}/${hash}\n"
+            }
+        }
+
+        zos.putNextEntry(new ZipEntry("avoid.signatures"))
+        zos.write(signatures.toString().getBytes(StandardCharsets.UTF_8))
+
+        zos.close()
+
+        Files.write(file.toPath(), bos.toByteArray())
+
+        bos.close()
+
+        println "> Added hash signatures"
+    }
+}

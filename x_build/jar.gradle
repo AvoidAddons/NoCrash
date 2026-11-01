@@ -1,0 +1,9 @@
+if (project.ext.has("fabricLoaded")) {
+    project.ext.effectiveJar = tasks.remapJar
+} else {
+    project.ext.effectiveJar = tasks.jar
+
+    project.dependencies.ext.modImplementation = { x -> project.dependencies.implementation(x) }
+    project.dependencies.ext.modCompileOnly = { x -> project.dependencies.compileOnly(x) }
+    project.dependencies.ext.modRuntimeOnly = { x -> project.dependencies.runtimeOnly(x) }
+}

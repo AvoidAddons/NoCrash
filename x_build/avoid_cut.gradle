@@ -1,0 +1,40 @@
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+
+Path avoidJAR        = project.file("libs/Avoid-${properties.avoid_version}.jar").toPath()
+Path avoidJARSources = project.file("libs/Avoid-${properties.avoid_version}-sources.jar").toPath()
+
+Path cutJAR        = project.file("libs/Avoid-${properties.avoid_version}+cut.jar").toPath()
+Path cutJARSources = project.file("libs/Avoid-${properties.avoid_version}+cut-sources.jar").toPath()
+
+/**
+ * Removes internals off a zip file and saves it to the given destination path.
+ */
+def shear(Path source, Path destination) {
+    var fos = new FileOutputStream(destination.toFile())
+    var zos = new ZipOutputStream(fos)
+
+    try (var zip = new ZipFile(source.toFile())) {
+        var entries = zip.entries()
+
+        while (entries.hasMoreElements()) {
+            var entry = entries.nextElement()
+
+            if (entry.getName() !in ["fabric.mod.json"] && !entry.getName().endsWith(".accesswidener") && !entry.getName().startsWithAny("pl/olafcio/avoid_impl", "pl/olafcio/avoid_platform")) {
+                zos.putNextEntry(entry)
+
+                try (var stream = zip.getInputStream(entry)) {
+                    stream.transferTo(zos)
+                }
+            }
+        }
+    }
+
+    zos.close()
+    fos.close()
+}
+
+if (!Files.isRegularFile(cutJAR))        shear(avoidJAR,        cutJAR)
+if (!Files.isRegularFile(cutJARSources)) shear(avoidJARSources, cutJARSources)

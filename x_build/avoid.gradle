@@ -1,0 +1,59 @@
+import java.nio.file.Files
+import java.nio.file.Path
+
+apply from: rootProject.file("x_build/api/github_api.gradle")
+apply from: rootProject.file("x_build/mod_info.gradle")
+
+var libs = project.file("libs").toPath()
+
+Path avoidJAR        = project.file("libs/Avoid-${properties.avoid_version}.jar").toPath()
+Path avoidJARSources = project.file("libs/Avoid-${properties.avoid_version}-sources.jar").toPath()
+
+ext.libs = libs
+
+ext.avoidJAR        = avoidJAR
+ext.avoidJARSources = avoidJARSources
+
+@SuppressWarnings('GrMethodMayBeStatic')
+void downloadAvoid_fun() {
+    Files.createDirectories(libs)
+
+    var version = github_getRelease("AvoidLib/Avoid", properties.avoid_version)
+
+    URI.create(version['assets'][1]['browser_download_url'] as String) \
+       .toURL() \
+       .withInputStream{ i -> avoidJAR.withOutputStream{ it << i }}
+
+    URI.create(version['assets'][0]['browser_download_url'] as String) \
+       .toURL() \
+       .withInputStream{ i -> avoidJARSources.withOutputStream{ it << i }}
+}
+
+tasks.register("downloadAvoid") {
+    doFirst {
+        downloadAvoid_fun()
+    }
+}
+
+if (!Files.isRegularFile(avoidJAR)) {
+    downloadAvoid_fun()
+}
+
+if (!Files.isRegularFile(avoidJARSources)) {
+    try {
+        downloadAvoid_fun()
+    } catch (ignored) {
+        println "[!] Unable to download Avoid sources"
+    }
+}
+
+/**
+ * Returns the Minecraft version that the Avoid JAR hosted on GitHub is made for.
+ */
+String nativeAvoidMinecraft() {
+    return readFMJ(avoidJAR)['depends']['minecraft']
+}
+
+ext {
+    nativeAvoidMinecraft = this.&nativeAvoidMinecraft
+}

@@ -1,0 +1,204 @@
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+
+buildscript {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+
+        gradlePluginPortal()
+    }
+
+    dependencies {
+        classpath 'net.fabricmc:fabric-loom:1.17-SNAPSHOT'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'idea'
+}
+
+group = 'com.example.avoidmod'
+version = project.properties.version
+
+//====================//
+//=== Repositories ===//
+//====================//
+
+repositories {
+    mavenCentral()
+
+    flatDir {
+        dirs "libs"
+    }
+}
+
+//=====================//
+//=== Local Plugins ===//
+//=====================//
+
+apply from: rootProject.file("x_build/jar_pre.gradle")
+
+evaluate(rootProject.file("x_build/fabric.gradle"))(project)
+
+apply from: rootProject.file("x_build/jar.gradle")
+apply from: rootProject.file("x_build/avoid.gradle")
+apply from: rootProject.file("x_build/avoid_modrinth.gradle")
+apply from: rootProject.file("x_build/avoid_cut.gradle")
+apply from: rootProject.file("x_build/mod_info.gradle")
+apply from: rootProject.file("x_build/launchers.gradle")
+apply from: rootProject.file("x_build/depend/github_depend.gradle")
+apply from: rootProject.file("x_build/avoid_plus.gradle")
+
+//============//
+//=== Base ===//
+//============//
+
+base {
+    archivesName = project.properties.jar_name
+}
+
+//====================//
+//=== Dependencies ===//
+//====================//
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    if (project.properties.minecraft != nativeAvoidMinecraft()) {
+        modRuntimeOnly "pl.olafcio:avoid:${project.properties.avoid_version}+${project.properties.minecraft}"
+    } else {
+        modRuntimeOnly "pl.olafcio:avoid:${project.properties.avoid_version}"
+    }
+
+    // This is done because Avoid has a lot of internals (the 2 recent releases were absolute refactors of those!).
+    // They would confuse you that they're public, or simply clutter your tabcompletions.
+    modCompileOnly "pl.olafcio:avoid:${project.properties.avoid_version}+cut"
+
+    if ('backported' in readFMJ(avoidRuntime)['depends']) {
+        modRuntimeOnly github("AvoidLib/Backported", jarFinder: { fn -> fn.contains("+" + project.properties.minecraft) })
+    }
+
+    compileOnly "org.joml:joml:1.10.8"
+    compileOnly "org.jetbrains:annotations:20.1.0"
+}
+
+//=================//
+//=== Resources ===//
+//=================//
+
+private String output(String... command) {
+    var proc = new ProcessBuilder().command(command)
+                                            .start()
+
+    proc.waitFor()
+
+    return new String(proc.in.readAllBytes(), StandardCharsets.UTF_8)
+}
+
+private String getBranch()            { return output("git", "branch", "--no-color", "--no-abbrev", "--show-current") }
+private String getCommitHash()        { return output("git", "log", getBranch(), "-1", "--format=%H")                 }
+private String getCommitAmount()      { return output("git", "rev-list", "--count", getBranch())                      }
+private String getCommitAmountTotal() { return output("git", "rev-list", "--count", "--all")                          }
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    for (var entry : project.properties)
+        if (entry.getValue() instanceof String)
+            inputs.property entry.getKey(), entry.getValue()
+
+    inputs.property "branch", getBranch()
+    inputs.property "commit_hash", getCommitHash()
+    inputs.property "commit_amount", getCommitAmount()
+    inputs.property "commit_amount_total", getCommitAmountTotal()
+
+    filteringCharset "UTF-8"
+    filesMatching(["avoid.mod.json"]) {
+        expand inputs.properties
+    }
+}
+
+//====================//
+//=== Output Setup ===//
+//====================//
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.properties.jarName}" }
+    }
+
+    if (project.file('src/main/resources/META-INF/MANIFEST.MF').isFile()) {
+        manifest {
+            from 'src/main/resources/META-INF/MANIFEST.MF'
+        }
+    }
+}
+
+//========================================//
+//===       Rename to .avoid.zip       ===//
+//===  (silences modloaders warnings)  ===//
+//========================================//
+
+private Path getOldJAR() {
+    return ext.effectiveJar.archiveFile.get().asFile.toPath()
+}
+
+project.ext.getOldJar = { -> getOldJar() }
+
+tasks.build.doLast {
+    if (Files.isRegularFile(getOldJAR()))
+        Files.move(getOldJAR(), project.ext.buildFile, StandardCopyOption.REPLACE_EXISTING)
+}
+
+//============//
+//=== Java ===//
+//============//
+
+def targetJavaVersion = Integer.parseInt((String) project.property("java_version"))
+
+tasks.withType(JavaCompile).configureEach {
+    // ensure that the encoding is set to UTF-8, no matter what the system default is
+    // this fixes some edge cases with special characters not displaying correctly
+    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
+    // If Javadoc is generated, this must be specified in that task too.
+
+    it.options.encoding = "UTF-8"
+
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        it.options.release.set(targetJavaVersion)
+    }
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+    if (System.getProperty("gen_sources") != null)
+        withSourcesJar()
+}
+
+//=======================//
+//=== Anti-mod repost ===//
+//=======================//
+
+avoid {
+    // makes your mod pass a signature verification test on each load.
+    // this makes your mod immune to mod reposting sites.
+
+    signatures = true
+}
+
+//=============//
+//=== Tests ===//
+//=============//
+
+test {
+    useJUnitPlatform()
+}
