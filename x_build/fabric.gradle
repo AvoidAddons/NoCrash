@@ -28,6 +28,29 @@ return { Object project ->
         mod "net.fabricmc:fabric-loader:${project.properties.fabric_loader}"
     }
 
+    var classes1 = project.file("build/classes")
+    var classes2 = project.file("build/the-classes")
+
+    project.tasks.build.doFirst {
+        if (classes1.exists()) {
+            classes1.deleteDir()
+        }
+
+        if (classes2.exists()) {
+            Files.move(classes2.toPath(), classes1)
+        }
+    }
+
+    project.tasks.build.doLast {
+        if (classes2.exists()) {
+            classes2.deleteDir()
+        }
+
+        if (classes1.exists()) {
+            Files.move(classes1.toPath(), classes2)
+        }
+    }
+
     project.tasks.runClient.dependsOn project.tasks.build
 
     if (project.ext.has("buildFile"))
