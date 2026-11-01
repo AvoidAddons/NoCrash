@@ -9,12 +9,13 @@ public final class NoCrashMain {
         IO.println("");
         IO.println("[Main/DEBUG] resolving processhandle information");
 
+        ProcessHandle parent = null;
         long parentPID = -1001;
 
         try {
             var self = ProcessHandle.current();
-            var parent = self.parent().orElse(null);
 
+            parent = self.parent().orElseThrow(() -> new RuntimeException("self.parent() is null"));
             parentPID = parent == null ? -1000 : parent.pid();
         } catch (Throwable e) {
             IO.println("[Main/ERROR] unable to fetch parent information; did Minecraft crash at startup?");
@@ -42,5 +43,45 @@ public final class NoCrashMain {
         IO.println("| Operating system    | %10s |".formatted(System.getProperty("os.name")));
         IO.println("| Java version        | %10s |".formatted(System.getProperty("java.version")));
         IO.println("|---------------------|------------|");
+
+        IO.println("");
+
+        if (parent == null) {
+            IO.println("[Main/INFO] crash detected");
+            IO.println("            opcode: 1");
+            IO.println("");
+
+            crash();
+        } else {
+            IO.println("[Main/DEBUG] starting crash polling");
+
+            while (true) {
+                if (!parent.isAlive()) {
+                    IO.println("[Main/INFO] crash detected");
+                    IO.println("            opcode: 2");
+                    IO.println("");
+
+                    crash();
+
+                    break;
+                }
+
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    IO.println("[Main/INFO] crash detected");
+                    IO.println("            opcode: 0");
+                    IO.println("");
+
+                    crash();
+
+                    break;
+                }
+            }
+        }
+    }
+
+    public static void crash() {
+        new NoCrashAction();
     }
 }
