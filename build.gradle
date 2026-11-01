@@ -23,7 +23,7 @@ plugins {
     id 'idea'
 }
 
-group = 'com.example.avoidmod'
+group = 'pl.olafcio.nocrash'
 version = project.properties.version
 
 //====================//

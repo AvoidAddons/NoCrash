@@ -1,13 +1,13 @@
 {
   "__schema": 1,
 
-  "id": "examplemod",
+  "id": "nocrash",
   "version": "1.0",
   "version-system": "semver",
 
-  "name": "ExampleMod",
-  "author": "You",
-  "description": "An example mod made with AvoidLib.",
+  "name": "NoCrash",
+  "author": "Olafcio",
+  "description": "Crash analysis & prevention suite",
 
-  "main-class": "com.example.mymod.MyMod"
+  "main-class": "pl.olafcio.nocrash.NoCrash"
 }
