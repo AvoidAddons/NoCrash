@@ -19,18 +19,19 @@ public final class NoCrashAction {
                    };
 
     public NoCrashAction() {
-        var window = new NoCrashWindow();
-
-        window.setState("Reading logs");
+        IO.println("[NoCrashAction/DEBUG] Reading logs");
         readDebugLogs();
 
-        window.setState("Normalizing logs");
+        IO.println("[NoCrashAction/DEBUG] Normalizing logs");
         this.logs = this.logs.replaceAll("\\r\\n|\\r", "\n");
 
-        window.setState("Scanning");
+        IO.println("[NoCrashAction/DEBUG] Scanning");
         if (this.logs.contains("Stopping!\n")) {
             IO.println("[NoCrashAction/INFO] Minecraft's window seems to have been shown");
+            return;
         }
+
+        var window = new NoCrashWindow();
 
         int i = 1;
 
