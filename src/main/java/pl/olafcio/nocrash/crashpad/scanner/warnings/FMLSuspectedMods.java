@@ -1,11 +1,10 @@
-package pl.olafcio.nocrash.crashpad.scanner.errors;
+package pl.olafcio.nocrash.crashpad.scanner.warnings;
 
 import pl.olafcio.nocrash.crashpad.message.Message;
 import pl.olafcio.nocrash.crashpad.message.MessageCategory;
 import pl.olafcio.nocrash.crashpad.message.MessageType;
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 
