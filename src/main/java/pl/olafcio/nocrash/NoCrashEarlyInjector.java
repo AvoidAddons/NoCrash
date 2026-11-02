@@ -7,6 +7,7 @@ import pl.olafcio.avoid_loader.interfaces.IMod;
 import pl.olafcio.avoid_loader.interfaces.IModFile;
 import pl.olafcio.avoid_loader.interfaces.services.IModLoader;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -14,6 +15,15 @@ import java.util.List;
 public class NoCrashEarlyInjector implements IModLoader {
     @Override
     public void load() {
+        try {
+            if (GraphicsEnvironment.isHeadless()) {
+                throw new RuntimeException();
+            }
+        } catch (Throwable e) {
+            IO.println("NoCrash cannot run in a headless environment! Skipping.");
+            return;
+        }
+
         try {
             var nc_logs = AvoidWrappedLoader.getGameDir().resolve("logs/nocrash.log").toFile();
             var nc_jar = getJarPath();
