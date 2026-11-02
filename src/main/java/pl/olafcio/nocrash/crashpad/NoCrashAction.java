@@ -32,6 +32,9 @@ public final class NoCrashAction {
         }
 
         var window = new NoCrashWindow();
+        var ambient = new NoCrashAmbient();
+
+        new Thread(ambient::play, "NoCrash/Ambient").start();
 
         int i = 1;
 
