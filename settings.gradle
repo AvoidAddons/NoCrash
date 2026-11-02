@@ -8,3 +8,5 @@ pluginManagement {
 }
 
 rootProject.name = 'NoCrash'
+
+include 'testing--wrong-namespace'
