@@ -1,5 +1,9 @@
 package pl.olafcio.nocrash.crashpad;
 
+import org.jetbrains.annotations.NotNull;
+import pl.olafcio.nocrash.crashpad.message.Message;
+import pl.olafcio.nocrash.crashpad.message.MessageCategory;
+import pl.olafcio.nocrash.crashpad.message.MessageType;
 import pl.olafcio.nocrash.crashpad.modscanner.IModMapper;
 import pl.olafcio.nocrash.crashpad.modscanner.Mod;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.AvoidMS;
@@ -102,12 +106,48 @@ public final class NoCrashAction {
     private final ArrayList<Mod> modobjects
             = new ArrayList<>();
 
-    private void mapMods(NoCrashWindow window) {
+    @NotNull
+    private ArrayList<Path> iterateMods(NoCrashWindow window) {
+        var mods = new ArrayList<Path>();
+
         int i = 1;
 
-        try (var modstream = Files.list(Path.of("mods"))) {
-            var mods = modstream.toList();
+        for (var folder : new String[]{ "mods", "avoidmods", "plugins", "avoidplugins", "resourcepacks", "avoidaddons" }) {
+            final int g = i++;
+            final int exrs = errors;
 
+            window.exec(() -> {
+                window.setState("Iterating mods %d/%d  ==  Errors found: %d".formatted(g, 6, exrs));
+                window.setProgress((float) g / 6);
+            });
+
+            var path = Path.of(folder);
+            if (!Files.isDirectory(path))
+                continue;
+
+            try (var modstream = Files.list(path)) {
+                mods.addAll(modstream.toList());
+            } catch (IOException e) {
+                IO.println("[NoCrashAction/ERROR] Cannot scan directory '%s'; skipping".formatted(folder));
+
+                errors++;
+
+                window.addMessage(new Message(
+                        MessageType.ERROR,
+                        MessageCategory.OTHER,
+                        "Unable to use directory: %s".formatted(folder)
+                ));
+            }
+        }
+        return mods;
+    }
+
+    private void mapMods(NoCrashWindow window) {
+        var mods = iterateMods(window);
+
+        int i = 1;
+
+        try {
             for (var mod : mods) {
                 var jar = new JarFile(mod.toFile());
 

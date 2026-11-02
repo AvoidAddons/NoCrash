@@ -48,7 +48,7 @@ public final class NoCrashWindow {
     }
 
     private final ArrayBlockingQueue<Runnable> callback
-            = new ArrayBlockingQueue<>(16);
+            = new ArrayBlockingQueue<>(36);
 
     public void exec(Runnable runnable) {
         if (Thread.currentThread() == thread) {
