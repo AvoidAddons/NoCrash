@@ -3,6 +3,7 @@ package pl.olafcio.nocrash.crashpad;
 import org.jetbrains.annotations.NotNull;
 import pl.olafcio.nocrash.crashpad.message.FixType;
 import pl.olafcio.nocrash.crashpad.message.Message;
+import pl.olafcio.nocrash.crashpad.message.MessageType;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -112,7 +113,7 @@ public final class NoCrashWindow {
 
 
         // Icon
-        var icon = (ImageIcon) UIManager.get("OptionPane.errorIcon", parent.getLocale());
+        var icon = (ImageIcon) UIManager.get(iconForMessage(message), parent.getLocale());
             icon = scale(icon, 17, 17);
 
         // Border
@@ -181,6 +182,20 @@ public final class NoCrashWindow {
 
             parent.add(children);
         }
+    }
+
+    @NotNull
+    private static String iconForMessage(Message message) {
+        if (message.type() == MessageType.ERROR)
+            return "OptionPane.errorIcon";
+        else if (message.type() == MessageType.CRITICAL)
+            return "OptionPane.errorIcon";
+        else if (message.type() == MessageType.WARNING)
+            return "OptionPane.warningIcon";
+        else if (message.type() == MessageType.INFO)
+            return "OptionPane.informationIcon";
+        else
+            return "OptionPane.questionIcon";
     }
 
     private static JLabel addButton(Runnable fix, String tooltip, Icon icon) {
