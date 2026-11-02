@@ -1,6 +1,7 @@
 package pl.olafcio.nocrash.crashpad;
 
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
+import pl.olafcio.nocrash.crashpad.scanner.errors.AvoidSignaturesError;
 import pl.olafcio.nocrash.crashpad.scanner.errors.ClassTweakerError;
 
 import java.io.IOException;
@@ -15,7 +16,8 @@ public final class NoCrashAction {
 
     private static final IScanner[] scanners
                    = new IScanner[]{
-                            new ClassTweakerError()
+                            new ClassTweakerError(),
+                            new AvoidSignaturesError()
                    };
 
     public NoCrashAction() {
