@@ -21,6 +21,7 @@ public final class NoCrashAction {
                             new MixinRuntimeError(),
                             new TextureStitchingError(),
                             new FMLModError(),
+                            new FMLSuspectedMods(),
                             new RegistryObjectError()
                    };
 
