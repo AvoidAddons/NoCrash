@@ -30,7 +30,7 @@ public final class NoCrashAction {
         this.logs = this.logs.replaceAll("\\r\\n|\\r", "\n");
 
         IO.println("[NoCrashAction/DEBUG] Scanning");
-        if (this.logs.contains("Stopping!\n")) {
+        if (this.logs.contains("Stopping!\n") && !this.logs.contains("[NoCrash] Preventing platform error GUI\n")) {
             IO.println("[NoCrashAction/INFO] Minecraft's window seems to have been shown");
             return;
         }
