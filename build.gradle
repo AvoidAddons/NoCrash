@@ -204,3 +204,23 @@ avoid {
 test {
     useJUnitPlatform()
 }
+
+subprojects {
+    afterEvaluate { project ->
+        project.classes {
+            dependsOn rootProject.build
+            doFirst {
+                Files.createDirectories(project.file("run/mods").toPath())
+
+                var Tavoid = project.file("run/mods/Avoid.jar")
+                var Tnocrash = project.file("run/mods/NoCrash.avoid.zip")
+
+                if (!Tavoid.exists())
+                    Files.createSymbolicLink(Tavoid.toPath(), rootProject.ext.avoidRuntime)
+
+                if (!Tnocrash.exists())
+                    Files.createSymbolicLink(Tnocrash.toPath(), rootProject.ext.buildFile)
+            }
+        }
+    }
+}
