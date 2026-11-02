@@ -15,7 +15,6 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public final class NoCrashWindow {
@@ -37,7 +36,7 @@ public final class NoCrashWindow {
             = new JPanel();
 
     private final JPanel messages
-            = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+            = new JPanel();
 
     public void setState(String state) {
         this.status.setText(state);
@@ -136,11 +135,18 @@ public final class NoCrashWindow {
         IO.println("[NoCrashWindow/INFO] Showing message: \"%s\"".formatted(message.text()));
 
         exec(() -> {
-            addMessage_internal(message, messages);
+            addMessage0(message, messages);
         });
     }
 
-    private void addMessage_internal(Message message, JPanel parent) {
+    private void addMessage0(Message message, JPanel parent) {
+        addMessage1(message, parent);
+
+        parent.revalidate();
+        parent.repaint();
+    }
+
+    private void addMessage1(Message message, JPanel parent) {
         var flex = new JPanel(new FlowLayout(FlowLayout.CENTER));
         var box = new JPanel(new BorderLayout(0, 0));
 
@@ -195,13 +201,11 @@ public final class NoCrashWindow {
         }
 
         parent.add(flex);
-        parent.revalidate();
-        parent.repaint();
 
         if (!message.children().isEmpty()) {
             var children = new JPanel();
 
-            children.setLayout(new FlowLayout(FlowLayout.LEADING));
+            children.setLayout(new BoxLayout(children, BoxLayout.PAGE_AXIS));
             children.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createEmptyBorder(0, 4, 0, 0),
                     BorderFactory.createCompoundBorder(
@@ -211,7 +215,7 @@ public final class NoCrashWindow {
             ));
 
             for (var child : message.children())
-                addMessage_internal(child, children);
+                addMessage0(child, children);
 
             parent.add(children);
         }
