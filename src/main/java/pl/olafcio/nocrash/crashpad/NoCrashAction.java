@@ -1,10 +1,7 @@
 package pl.olafcio.nocrash.crashpad;
 
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
-import pl.olafcio.nocrash.crashpad.scanner.errors.AvoidSignaturesError;
-import pl.olafcio.nocrash.crashpad.scanner.errors.ClassTweakerError;
-import pl.olafcio.nocrash.crashpad.scanner.errors.MixinRuntimeError;
-import pl.olafcio.nocrash.crashpad.scanner.errors.TextureStitchingError;
+import pl.olafcio.nocrash.crashpad.scanner.errors.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +19,8 @@ public final class NoCrashAction {
                             new ClassTweakerError(),
                             new AvoidSignaturesError(),
                             new MixinRuntimeError(),
-                            new TextureStitchingError()
+                            new TextureStitchingError(),
+                            new FMLModError()
                    };
 
     public NoCrashAction() {
