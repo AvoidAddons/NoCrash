@@ -2,6 +2,7 @@ package pl.olafcio.nocrash.crashpad;
 
 import pl.olafcio.nocrash.crashpad.modscanner.IModMapper;
 import pl.olafcio.nocrash.crashpad.modscanner.Mod;
+import pl.olafcio.nocrash.crashpad.modscanner.mapper.FabricMS;
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
 import pl.olafcio.nocrash.crashpad.scanner.errors.*;
 import pl.olafcio.nocrash.crashpad.scanner.warnings.*;
@@ -33,6 +34,7 @@ public final class NoCrashAction {
 
     private static final IModMapper[] mappers
                    = new IModMapper[]{
+                            new FabricMS()
                    };
 
     public NoCrashAction() {
