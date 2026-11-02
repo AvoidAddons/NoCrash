@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+
+  "id": "nocrash-test",
+  "name": "NoCrash Testing Module",
+  "version": "1.0",
+
+  "mixins": [
+    "nocrash-test.mixins.json"
+  ]
+}

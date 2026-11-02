@@ -1,0 +1,17 @@
+{
+  "mixins": [
+    "MinecraftMixin"
+  ],
+  "package": "pl.olafcio.nocrash_test.mixin",
+  "minVersion": "0.8",
+  "compatibilityLevel": "JAVA_21",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  },
+  "mixinextras": {
+    "minVersion": "0.5.3"
+  }
+}

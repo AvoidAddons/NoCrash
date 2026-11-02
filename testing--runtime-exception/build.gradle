@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+    id 'fabric-loom'
+}
+
+group = 'pl.olafcio.nocrash'
+version = '1.0'
+
+repositories {
+    mavenCentral()
+
+    flatDir {
+        dirs "../libs"
+    }
+
+    flatDir {
+        dirs "../build/libs"
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.properties.minecraft}"
+    mappings project.loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.properties.fabric_loader}"
+}

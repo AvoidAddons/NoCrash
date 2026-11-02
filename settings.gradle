@@ -10,3 +10,4 @@ pluginManagement {
 rootProject.name = 'NoCrash'
 
 include 'testing--wrong-namespace'
+include 'testing--runtime-exception'
