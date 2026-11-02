@@ -3,6 +3,7 @@ package pl.olafcio.nocrash.crashpad;
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
 import pl.olafcio.nocrash.crashpad.scanner.errors.AvoidSignaturesError;
 import pl.olafcio.nocrash.crashpad.scanner.errors.ClassTweakerError;
+import pl.olafcio.nocrash.crashpad.scanner.errors.MixinRuntimeError;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +18,8 @@ public final class NoCrashAction {
     private static final IScanner[] scanners
                    = new IScanner[]{
                             new ClassTweakerError(),
-                            new AvoidSignaturesError()
+                            new AvoidSignaturesError(),
+                            new MixinRuntimeError()
                    };
 
     public NoCrashAction() {
