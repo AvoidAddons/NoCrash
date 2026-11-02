@@ -31,7 +31,7 @@ public final class NoCrashWindow {
             = new JPanel();
 
     private final JPanel messages
-            = new JPanel();
+            = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
 
     public void setState(String state) {
         this.status.setText(state);
@@ -102,63 +102,85 @@ public final class NoCrashWindow {
         IO.println("[NoCrashWindow/INFO] Showing message: \"%s\"".formatted(message.text()));
 
         exec(() -> {
-            var flex = new JPanel(new FlowLayout(FlowLayout.CENTER));
-            var box = new JPanel(new BorderLayout(0, 0));
-
-
-            // Icon
-            var icon = (ImageIcon) UIManager.get("OptionPane.errorIcon", this.messages.getLocale());
-                icon = scale(icon, 17, 17);
-
-            // Border
-            box.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), new EmptyBorder(5, 6, 3, 3)));
-
-            // Label
-            var label = new JLabel(message.text(), icon, SwingConstants.LEFT);
-            box.add(label);
-
-            AffineTransform affineTransform = new AffineTransform();
-            affineTransform.translate(0, -1.4);
-            label.setFont(label.getFont().deriveFont(affineTransform));
-
-
-            flex.add(box);
-
-            var fixType = message.autoFixType();
-            if (fixType != FixType.UNAVAILABLE) {
-                final var btn = new JLabel[1];
-
-                flex.add(btn[0] = addButton(() -> {
-                    if (
-                            JOptionPane.showConfirmDialog(null,
-                                    fixType.getDescription(),
-                                    "Are you sure (%s)?".formatted(fixType.getTitle()),
-                                    JOptionPane.YES_NO_CANCEL_OPTION
-                            ) == JOptionPane.YES_OPTION
-                    ) {
-                        message.autoFix().run();
-                        btn[0].setEnabled(false);
-
-                        var checkLabel = new JLabel(ICON_CHECK);
-
-                        checkLabel.setToolTipText("The quick fix has been applied for this issue.");
-
-                        flex.add(checkLabel);
-                        flex.revalidate();
-                        flex.repaint();
-
-                        //TODO cursor
-                        // btn[0].setCursor(Cursor.getSystemCustomCursor("Invalid.32x32"));
-                        // } catch (AWTException e) {
-                        // new RuntimeException("Failed to set cursor", e).printStackTrace();
-                    }
-                }, fixType.getTooltip(), ICON_DELETE));
-            }
-
-            this.messages.add(flex);
-            this.messages.revalidate();
-            this.messages.repaint();
+            addMessage_internal(message, messages);
         });
+    }
+
+    private void addMessage_internal(Message message, JPanel parent) {
+        var flex = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        var box = new JPanel(new BorderLayout(0, 0));
+
+
+        // Icon
+        var icon = (ImageIcon) UIManager.get("OptionPane.errorIcon", parent.getLocale());
+            icon = scale(icon, 17, 17);
+
+        // Border
+        box.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), new EmptyBorder(5, 6, 3, 3)));
+
+        // Label
+        var label = new JLabel(message.text(), icon, SwingConstants.LEFT);
+        box.add(label);
+
+        AffineTransform affineTransform = new AffineTransform();
+        affineTransform.translate(0, -1.4);
+        label.setFont(label.getFont().deriveFont(affineTransform));
+
+
+        flex.add(box);
+
+        var fixType = message.autoFixType();
+        if (fixType != FixType.UNAVAILABLE) {
+            final var btn = new JLabel[1];
+
+            flex.add(btn[0] = addButton(() -> {
+                if (
+                        JOptionPane.showConfirmDialog(null,
+                                fixType.getDescription(),
+                                "Are you sure (%s)?".formatted(fixType.getTitle()),
+                                JOptionPane.YES_NO_CANCEL_OPTION
+                        ) == JOptionPane.YES_OPTION
+                ) {
+                    message.autoFix().run();
+                    btn[0].setEnabled(false);
+
+                    var checkLabel = new JLabel(ICON_CHECK);
+
+                    checkLabel.setToolTipText("The quick fix has been applied for this issue.");
+
+                    flex.add(checkLabel);
+                    flex.revalidate();
+                    flex.repaint();
+
+                    //TODO cursor
+                    // btn[0].setCursor(Cursor.getSystemCustomCursor("Invalid.32x32"));
+                    // } catch (AWTException e) {
+                    // new RuntimeException("Failed to set cursor", e).printStackTrace();
+                }
+            }, fixType.getTooltip(), ICON_DELETE));
+        }
+
+        parent.add(flex);
+        parent.revalidate();
+        parent.repaint();
+
+        if (!message.children().isEmpty()) {
+            var children = new JPanel();
+
+            children.setLayout(new FlowLayout(FlowLayout.LEADING));
+            children.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createEmptyBorder(0, 4, 0, 0),
+                    BorderFactory.createCompoundBorder(
+                            BorderFactory.createMatteBorder(0, 4, 0, 0, new Color(0x858585)),
+                            BorderFactory.createEmptyBorder(0, 4, 0, 0)
+                    )
+            ));
+
+            for (var child : message.children())
+                addMessage_internal(child, children);
+
+            parent.add(children);
+        }
     }
 
     private static JLabel addButton(Runnable fix, String tooltip, Icon icon) {
