@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 public final class NoCrashAction {
     private String  logs;
     private LogType logType;
+    private Path    logFile;
 
     private static final IScanner[] scanners
                    = new IScanner[]{
@@ -35,7 +36,7 @@ public final class NoCrashAction {
             return;
         }
 
-        var window = new NoCrashWindow();
+        var window = new NoCrashWindow(logFile == null ? null : logFile.toFile());
         var ambient = new NoCrashAmbient();
 
         new Thread(ambient::play, "NoCrash/Ambient").start();
@@ -80,7 +81,8 @@ public final class NoCrashAction {
         this.logType = LogType.DEBUG;
 
         try {
-            this.logs = Files.readString(Path.of("./logs/debug.log"), StandardCharsets.UTF_8);
+            this.logFile = Path.of("./logs/debug.log");
+            this.logs = Files.readString(logFile, StandardCharsets.UTF_8);
         } catch (IOException e) {
             IO.println("[NoCrashAction/ERROR] unable to read debug.log  /" + e.getClass().getName());
             IO.println("                      message:       " + e.getMessage());
@@ -95,7 +97,8 @@ public final class NoCrashAction {
         this.logType = LogType.LATEST;
 
         try {
-            this.logs = Files.readString(Path.of("./logs/latest.log"), StandardCharsets.UTF_8);
+            this.logFile = Path.of("./logs/latest.log");
+            this.logs = Files.readString(logFile, StandardCharsets.UTF_8);
         } catch (IOException e) {
             IO.println("[NoCrashAction/ERROR] unable to read latest.log  /" + e.getClass().getName());
             IO.println("                      message:       " + e.getMessage());
@@ -108,6 +111,7 @@ public final class NoCrashAction {
 
     private void readDummy() {
         this.logType = LogType.NONE;
+        this.logFile = null;
         this.logs = "";
     }
 

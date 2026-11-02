@@ -13,13 +13,18 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public final class NoCrashWindow {
     private final Thread thread;
+    private final File logFile;
 
-    public NoCrashWindow() {
+    public NoCrashWindow(File logFile) {
+        this.logFile = logFile;
+
         this.thread = new Thread(this::show, "NoCrash/GUI");
         this.thread.setDaemon(false);
         this.thread.start();
@@ -69,9 +74,35 @@ public final class NoCrashWindow {
         frame.add(progress);
         frame.add(messages);
 
-        var button = new JButton("GFG WebSite Click");
+        var button = new JButton("Open logs");
 
-        button.setBounds(150, 200, 220, 50);
+        button.setBounds(10, 300, 160, 40);
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (logFile == null) {
+                    JOptionPane.showMessageDialog(
+                            frame,
+                            "Failed to open logs: no log available",
+                            "Unable to open logs",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+
+                    return;
+                }
+
+                try {
+                    Desktop.getDesktop().open(logFile);
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(
+                            frame,
+                            "Failed to open logs\nTechnical information:\n\n" + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
+                            "Unable to open logs",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        });
 
         frame.add(button);
 
