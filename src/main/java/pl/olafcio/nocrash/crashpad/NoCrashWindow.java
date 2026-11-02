@@ -16,15 +16,19 @@ public final class NoCrashWindow {
         this.thread.start();
     }
 
-    private final Label status
-            = new Label("Initializing");
+    private final JLabel status
+            = new JLabel("Initializing");
+
+    private final JPanel progress
+            = new JPanel();
 
     public void setState(String state) {
         this.status.setText(state);
+        this.progress.setBounds(0, 0, 0, 30);
     }
 
     public void setProgress(float percentage) {
-        // TODO
+        this.progress.setBounds(0, 0, (int) (500 * percentage), 30);
     }
 
     private transient Runnable callback;
@@ -40,8 +44,14 @@ public final class NoCrashWindow {
 
     private synchronized void show() {
         var frame = new JFrame();
+
         status.setBounds(5, 5, 100, 15);
+        status.setOpaque(false);
+
+        progress.setBackground(new Color(0x3A5EA1));
+
         frame.add(status);
+        frame.add(progress);
 
         var button = new JButton("GFG WebSite Click");
 
