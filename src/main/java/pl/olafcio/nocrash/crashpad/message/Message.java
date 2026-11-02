@@ -12,8 +12,17 @@ public record Message(
         MessageType type,
         MessageCategory category,
         String text,
-        Runnable autoFix
+        Runnable autoFix,
+        FixType autoFixType
 ) {
+    public Message(
+            MessageType type,
+            MessageCategory category,
+            String text
+    ) {
+        this(type, category, text, null, FixType.UNAVAILABLE);
+    }
+
     public Message(
             MessageType type,
             MessageCategory category,
@@ -26,6 +35,6 @@ public record Message(
             } catch (IOException e) {
                 throw new QuickFixFailed("Failed to delete mod: '%s'".formatted(badResource.toAbsolutePath().toString()), 2, e);
             }
-        });
+        }, FixType.DELETE);
     }
 }

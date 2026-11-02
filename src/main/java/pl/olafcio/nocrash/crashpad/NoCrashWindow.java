@@ -1,6 +1,7 @@
 package pl.olafcio.nocrash.crashpad;
 
 import org.jetbrains.annotations.NotNull;
+import pl.olafcio.nocrash.crashpad.message.FixType;
 import pl.olafcio.nocrash.crashpad.message.Message;
 
 import javax.swing.*;
@@ -123,9 +124,39 @@ public final class NoCrashWindow {
 
             flex.add(box);
 
-            flex.add(addButton(message.autoFix(), "Delete mod", ICON_DELETE));
+            var fixType = message.autoFixType();
+            if (fixType != FixType.UNAVAILABLE) {
+                final var btn = new JLabel[1];
+
+                flex.add(btn[0] = addButton(() -> {
+                    if (
+                            JOptionPane.showConfirmDialog(null,
+                                    fixType.getDescription(),
+                                    "Are you sure (%s)?".formatted(fixType.getTitle()),
+                                    JOptionPane.YES_NO_CANCEL_OPTION
+                            ) == JOptionPane.YES_OPTION
+                    ) {
+                        message.autoFix().run();
+                        btn[0].setEnabled(false);
+
+                        var checkLabel = new JLabel(ICON_CHECK);
+
+                        checkLabel.setToolTipText("The quick fix has been applied for this issue.");
+
+                        flex.add(checkLabel);
+                        flex.revalidate();
+                        flex.repaint();
+
+                        //TODO cursor
+                        // btn[0].setCursor(Cursor.getSystemCustomCursor("Invalid.32x32"));
+                        // } catch (AWTException e) {
+                        // new RuntimeException("Failed to set cursor", e).printStackTrace();
+                    }
+                }, fixType.getTooltip(), ICON_DELETE));
+            }
 
             this.messages.add(flex);
+            this.messages.revalidate();
             this.messages.repaint();
         });
     }
@@ -137,17 +168,20 @@ public final class NoCrashWindow {
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                fix.run();
+                if (button.isEnabled())
+                    fix.run();
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
-                button.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0xB5B1B1)), BorderFactory.createLoweredSoftBevelBorder()));
+                if (button.isEnabled())
+                    button.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0xB5B1B1)), BorderFactory.createLoweredSoftBevelBorder()));
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                button.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0xB5B1B1)), BorderFactory.createRaisedSoftBevelBorder()));
+                if (button.isEnabled())
+                    button.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(0xB5B1B1)), BorderFactory.createRaisedSoftBevelBorder()));
             }
         });
 
@@ -175,4 +209,5 @@ public final class NoCrashWindow {
     }
 
     private static final Icon ICON_DELETE = scale(new ImageIcon(read("icons/delete.png")), 20, 20);
+    private static final Icon ICON_CHECK = scale(new ImageIcon(read("icons/checkmark.png")), 20, 20);
 }
