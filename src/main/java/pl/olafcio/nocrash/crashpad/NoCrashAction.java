@@ -37,20 +37,32 @@ public final class NoCrashAction {
         new Thread(ambient::play, "NoCrash/Ambient").start();
 
         int i = 1;
+        int errors = 0;
 
         for (var scanner : scanners) {
             final int g = i;
+            final int exrs = errors;
 
             window.exec(() -> {
-                window.setState("Scanning %d/%d".formatted(g, scanners.length));
+                window.setState("Scanning %d/%d  ==  Errors found: %d".formatted(g, scanners.length, exrs));
                 window.setProgress((float)g / scanners.length);
             });
 
             var pattern = Pattern.compile(scanner.regex(), Pattern.MULTILINE);
             var matcher = pattern.matcher(this.logs);
 
-            while (matcher.find())
+            while (matcher.find()) {
                 window.addMessage(scanner.message(matcher));
+
+                errors++;
+
+                final int exrs2 = errors;
+
+                window.exec(() -> {
+                    window.setState("Scanning %d/%d  ==  Errors found: %d".formatted(g, scanners.length, exrs2));
+                    window.setProgress((float)g / scanners.length);
+                });
+            }
 
             i++;
         }
