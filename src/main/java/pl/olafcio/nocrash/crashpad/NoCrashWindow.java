@@ -4,6 +4,8 @@ import pl.olafcio.nocrash.crashpad.message.Message;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public final class NoCrashWindow {
     private final Thread thread;
@@ -49,6 +51,18 @@ public final class NoCrashWindow {
         frame.setSize(500, 600);
         frame.setLayout(null);
         frame.setVisible(true);
+
+        frame.addWindowListener(new WindowAdapter()
+        {
+            @Override
+            public void windowClosing(WindowEvent e)
+            {
+                IO.println("[NoCrashWindow/INFO] Closing");
+
+                e.getWindow().dispose();
+                thread.interrupt();
+            }
+        });
 
         while (true) {
             try {
