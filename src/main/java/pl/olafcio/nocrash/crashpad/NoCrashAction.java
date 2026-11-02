@@ -39,6 +39,10 @@ public final class NoCrashAction {
                             new AvoidMS()
                    };
 
+    static void main() {
+        new NoCrashAction();
+    }
+
     public NoCrashAction() {
         IO.println("[NoCrashAction/DEBUG] Reading logs");
         readDebugLogs();
