@@ -20,7 +20,8 @@ public final class NoCrashAction {
                             new AvoidSignaturesError(),
                             new MixinRuntimeError(),
                             new TextureStitchingError(),
-                            new FMLModError()
+                            new FMLModError(),
+                            new RegistryObjectError()
                    };
 
     public NoCrashAction() {
