@@ -74,6 +74,8 @@ public final class NoCrashWindow {
         button.setBounds(150, 200, 220, 50);
 
         frame.add(button);
+
+        frame.setTitle("Minecraft crashed! | NoCrash");
         frame.setSize(500, 600);
         frame.setLayout(null);
         frame.setVisible(true);
