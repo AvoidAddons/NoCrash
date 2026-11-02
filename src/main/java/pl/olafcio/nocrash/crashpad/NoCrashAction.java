@@ -4,6 +4,7 @@ import pl.olafcio.nocrash.crashpad.scanner.IScanner;
 import pl.olafcio.nocrash.crashpad.scanner.errors.AvoidSignaturesError;
 import pl.olafcio.nocrash.crashpad.scanner.errors.ClassTweakerError;
 import pl.olafcio.nocrash.crashpad.scanner.errors.MixinRuntimeError;
+import pl.olafcio.nocrash.crashpad.scanner.errors.TextureStitchingError;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,7 +21,8 @@ public final class NoCrashAction {
                    = new IScanner[]{
                             new ClassTweakerError(),
                             new AvoidSignaturesError(),
-                            new MixinRuntimeError()
+                            new MixinRuntimeError(),
+                            new TextureStitchingError()
                    };
 
     public NoCrashAction() {
