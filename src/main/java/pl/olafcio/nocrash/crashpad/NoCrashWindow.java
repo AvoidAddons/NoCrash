@@ -68,7 +68,7 @@ public final class NoCrashWindow {
         progress.setBackground(new Color(0x3A5EA1));
 
         messages.setLayout(new FlowLayout(FlowLayout.LEADING));
-        messages.setBounds(5, 30, 500 - 5*2, 600 - 30);
+        messages.setBounds(5, 30, 500 - 5, 300 - 30);
 
         frame.add(status);
         frame.add(progress);
