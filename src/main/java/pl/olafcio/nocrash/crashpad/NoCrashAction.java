@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import pl.olafcio.nocrash.crashpad.message.Message;
 import pl.olafcio.nocrash.crashpad.message.MessageCategory;
 import pl.olafcio.nocrash.crashpad.message.MessageType;
+import pl.olafcio.nocrash.crashpad.modscanner.IModAnalyzer;
 import pl.olafcio.nocrash.crashpad.modscanner.IModMapper;
 import pl.olafcio.nocrash.crashpad.modscanner.Mod;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.AvoidMS;
@@ -17,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
@@ -41,6 +41,10 @@ public final class NoCrashAction {
                    = new IModMapper[]{
                             new FabricMS(),
                             new AvoidMS()
+                   };
+
+    private static final IModAnalyzer[] analyzers
+                   = new IModAnalyzer[]{
                    };
 
     static void main() {
@@ -67,6 +71,7 @@ public final class NoCrashAction {
 
         scanLogs(window);
         mapMods(window);
+        scanMods(window);
     }
 
     private int errors = 0;
@@ -103,7 +108,9 @@ public final class NoCrashAction {
         }
     }
 
-    private final ArrayList<Mod> modobjects
+    private record ModFull(Mod mod, Path path, JarFile jar) {}
+
+    private final ArrayList<ModFull> modobjects
             = new ArrayList<>();
 
     @NotNull
@@ -167,7 +174,8 @@ public final class NoCrashAction {
                         if (map.length == 0)
                             continue;
 
-                        Collections.addAll(modobjects, map);
+                        for (var modN : map)
+                            modobjects.add(new ModFull(modN, mod, jar));
                     } catch (Throwable ignored) {
                         continue;
                     }
@@ -177,6 +185,32 @@ public final class NoCrashAction {
             }
         } catch (IOException e) {
             window.setState("Failed to map mods!  ==  Errors found: %d".formatted(errors));
+        }
+    }
+
+    private void scanMods(NoCrashWindow window) {
+        int i = 1;
+
+        for (var mod : modobjects) {
+            for (var analyzer : analyzers) {
+                final int g = i;
+                final int exrs = errors;
+
+                window.exec(() -> {
+                    window.setState("Analyzing mods %d/%d  ==  Errors found: %d".formatted(g, analyzers.length * modobjects.size(), exrs));
+                    window.setProgress((float) g / (analyzers.length * modobjects.size()));
+                });
+
+                i++;
+
+                analyzer.analyze(mod.jar(), mod.mod(), mod.path());
+            }
+
+            try {
+                mod.jar.close();
+            } catch (IOException e) {
+                IO.println("[NoCrashAction/WARN] Failed to close '%s': %s (%s)".formatted(mod.path.toAbsolutePath().toString(), e.getMessage(), e.getClass().getSimpleName()));
+            }
         }
     }
 
