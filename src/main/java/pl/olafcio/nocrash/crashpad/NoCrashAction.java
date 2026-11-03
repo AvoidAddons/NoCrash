@@ -7,6 +7,7 @@ import pl.olafcio.nocrash.crashpad.message.MessageType;
 import pl.olafcio.nocrash.crashpad.modscanner.IModAnalyzer;
 import pl.olafcio.nocrash.crashpad.modscanner.IModMapper;
 import pl.olafcio.nocrash.crashpad.modscanner.Mod;
+import pl.olafcio.nocrash.crashpad.modscanner.analyzer.NonQuadTextures;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.AvoidMS;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.FabricMS;
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
@@ -45,6 +46,7 @@ public final class NoCrashAction {
 
     private static final IModAnalyzer[] analyzers
                    = new IModAnalyzer[]{
+                            new NonQuadTextures()
                    };
 
     static void main() {
