@@ -1,3 +1,5 @@
+\[ The assets (music, icons and fonts) are licensed under different licenses. Please see: "LICENSE_ASSETS.md" ]
+
 **OLAFCIO EXTERNAL TEDGE-SUITE LICENSE**
 
 Released at 29 July 2026
