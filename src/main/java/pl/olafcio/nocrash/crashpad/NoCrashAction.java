@@ -6,10 +6,12 @@ import pl.olafcio.nocrash.crashpad.message.MessageCategory;
 import pl.olafcio.nocrash.crashpad.message.MessageType;
 import pl.olafcio.nocrash.crashpad.modscanner.IModAnalyzer;
 import pl.olafcio.nocrash.crashpad.modscanner.IModMapper;
-import pl.olafcio.nocrash.crashpad.modscanner.Mod;
+import pl.olafcio.nocrash.crashpad.modscanner.IModOverviewer;
+import pl.olafcio.nocrash.crashpad.modscanner.ModFile;
 import pl.olafcio.nocrash.crashpad.modscanner.analyzer.NonQuadTextures;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.AvoidMS;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.FabricMS;
+import pl.olafcio.nocrash.crashpad.modscanner.overviewer.DuplicateModDetector;
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
 import pl.olafcio.nocrash.crashpad.scanner.errors.*;
 import pl.olafcio.nocrash.crashpad.scanner.warnings.*;
@@ -52,6 +54,11 @@ public final class NoCrashAction {
                             new NonQuadTextures()
                    };
 
+    private static final IModOverviewer[] overviewers
+                   = new IModOverviewer[]{
+                            new DuplicateModDetector()
+                   };
+
     static void main() {
         new NoCrashAction();
     }
@@ -76,32 +83,29 @@ public final class NoCrashAction {
 
         scanLogs(window);
         mapMods(window);
-        detectDuplicateMods(window);
+        overviewMods(window);
         scanMods(window);
     }
 
-    private void detectDuplicateMods(NoCrashWindow window) {
+    private void overviewMods(NoCrashWindow window) {
         int i = 0;
-        var set = new HashSet<String>();
 
-        for (var mod : modobjects) {
+        for (var overviewer : overviewers) {
             final int g = i++;
             final int exrs = errors;
 
             window.exec(() -> {
-                window.setState("Detecting duplicate mods %d/%d  ==  Errors found: %d".formatted(g, modobjects.size(), exrs));
+                window.setState("Overviewing mods %d/%d  ==  Errors found: %d".formatted(g, modobjects.size(), exrs));
                 window.setProgress((float)g / modobjects.size());
             });
 
-            if (!set.add(mod.mod.id())) {
-                errors++;
+            var out = overviewer.overview(modobjects);
 
-                window.addMessage(new Message(
-                        MessageType.CRITICAL,
-                        MessageCategory.OTHER,
-                        "You have a duplicate mod: '%s' (%s)".formatted(mod.path.getFileName().toString(), mod.mod.id()),
-                        mod.path
-                ));
+            for (var msg : out) {
+                window.addMessage(msg);
+
+                if (msg.type() != MessageType.INFO)
+                    errors++;
             }
         }
     }
@@ -140,9 +144,7 @@ public final class NoCrashAction {
         }
     }
 
-    private record ModFull(Mod mod, Path path, JarFile jar) {}
-
-    private final ArrayList<ModFull> modobjects
+    private final ArrayList<ModFile> modobjects
             = new ArrayList<>();
 
     @NotNull
@@ -207,7 +209,7 @@ public final class NoCrashAction {
                             continue;
 
                         for (var modN : map)
-                            modobjects.add(new ModFull(modN, mod, jar));
+                            modobjects.add(new ModFile(modN, mod, jar));
                     } catch (Throwable ignored) {
                         continue;
                     }
@@ -239,9 +241,9 @@ public final class NoCrashAction {
             }
 
             try {
-                mod.jar.close();
+                mod.jar().close();
             } catch (IOException e) {
-                IO.println("[NoCrashAction/WARN] Failed to close '%s': %s (%s)".formatted(mod.path.toAbsolutePath().toString(), e.getMessage(), e.getClass().getSimpleName()));
+                IO.println("[NoCrashAction/WARN] Failed to close '%s': %s (%s)".formatted(mod.path().toAbsolutePath().toString(), e.getMessage(), e.getClass().getSimpleName()));
             }
         }
     }
