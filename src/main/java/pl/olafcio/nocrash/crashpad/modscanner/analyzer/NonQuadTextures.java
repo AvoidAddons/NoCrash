@@ -59,7 +59,7 @@ public final class NonQuadTextures implements IModAnalyzer {
                     return new Message(
                             MessageType.WARNING,
                             MessageCategory.MOD_INCOMPATIBILITY,
-                            "Mod '%s' uses textures that the size of is not a multiplication of 2".formatted(mod.id()),
+                            "Mod '%s' uses textures that the size of is not a power of 2".formatted(mod.id()),
                             path
                     );
             }
