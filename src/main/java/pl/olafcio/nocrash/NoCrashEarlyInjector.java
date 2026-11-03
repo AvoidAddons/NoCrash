@@ -37,7 +37,7 @@ public class NoCrashEarlyInjector implements IModLoader {
                                                               null;
 
             new ProcessBuilder()
-                    .command(minecraftProcess.info().command().orElseThrow(), "-Xmx256M", "-Xms256M", "-jar", nc_jar, String.valueOf(minecraftProcess.pid()), modloader, Avoid.getBrand(), Avoid.getVersion())
+                    .command(minecraftProcess.info().command().orElseThrow(), "-Xmx256M", "-Xms256M", "-cp", NoCrashDeps.download().toAbsolutePath() + ";" + nc_jar, "pl.olafcio.nocrash.crashpad.NoCrashMain", String.valueOf(minecraftProcess.pid()), modloader, Avoid.getBrand(), Avoid.getVersion())
                     .redirectInput(ProcessBuilder.Redirect.INHERIT)
                     .redirectOutput(nc_logs)
                     .redirectErrorStream(true)
