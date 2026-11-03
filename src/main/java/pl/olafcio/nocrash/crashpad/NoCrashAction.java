@@ -37,7 +37,8 @@ public final class NoCrashAction {
                             new FMLModError(),
                             new FMLSuspectedMods(),
                             new FMLEntrypointError(),
-                            new RegistryObjectError()
+                            new RegistryObjectError(),
+                            new ItemDoesNotExistError()
                    };
 
     private static final IModMapper[] mappers
