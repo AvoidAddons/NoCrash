@@ -6,11 +6,14 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public final class NoCrashAmbient {
+    private static final String[] songs
+                    = new String[]{ "Recovery.wav", "Exfiltration.wav" };
+
     public void play() {
         try {
             InputStream byteStream;
 
-            try (var stream = this.getClass().getResourceAsStream("/Recovery.wav")) {  // I made dis! somewhat inspired by BOTW
+            try (var stream = this.getClass().getResourceAsStream("/music/" + songs[(int) Math.round(Math.random() * (songs.length - 1))])) {  // I made dis! somewhat inspired by BOTW
                 byteStream = new ByteArrayInputStream(stream.readAllBytes());
             }
 
