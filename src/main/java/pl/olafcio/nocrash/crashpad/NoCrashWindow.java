@@ -7,12 +7,14 @@ import pl.olafcio.nocrash.crashpad.message.MessageType;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.basic.BasicPanelUI;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -38,6 +40,18 @@ public final class NoCrashWindow {
     private final JPanel messages
             = new JPanel();
 
+    private Font font;
+
+    {
+        try {
+            font = Font.createFont(Font.TRUETYPE_FONT, readToStream("fonts/Inter-VariableFont_slnt,wght.ttf"))
+                       .deriveFont(Font.BOLD, 13F);
+        } catch (FontFormatException | IOException e) {
+            font = null;
+            IO.println("[NoCrashWindow/WARN] Failed to load font");
+        }
+    }
+
     public void setState(String state) {
         this.status.setText(state);
         this.progress.setBounds(0, 0, 0, 30);
@@ -60,22 +74,50 @@ public final class NoCrashWindow {
 
     private synchronized void show() {
         var frame = new JFrame();
+        var child = new JPanel();
 
-        status.setBounds(5, 5, 500 - 5*2, 15);
+        child.setBounds(0, 0, 500, 600);
+        child.setBackground(new Color(0x333333));
+        child.setLayout(null);
+
+        status.setBounds(5, 7, 500 - 5*2, 15);
         status.setOpaque(false);
+        status.setFont(font);
+
+        var hsb = new float[3];
+        Color.RGBtoHSB(58, 94, 161, hsb);
 
         progress.setBackground(new Color(0x3A5EA1));
+        progress.setUI(new BasicPanelUI() {
+            @Override
+            public void update(Graphics g, JComponent c) {
+                if (c.isOpaque()) {
+                    for (int y = 0, height = c.getHeight(); y < height; y++) {
+                        float t = (float)y / height;
+
+                        g.setColor(Color.getHSBColor(hsb[0], hsb[1], 0.5F + hsb[2] * t/2));
+                        g.fillRect(0, y, c.getWidth(), y+1);
+                    }
+                }
+
+                paint(g, c);
+            }
+        });
 
         messages.setLayout(new FlowLayout(FlowLayout.LEADING));
-        messages.setBounds(5, 30, 500 - 5, 300 - 30);
+        messages.setBackground(new Color(0x3c3c3c));
+        messages.setBounds(0, 30, 500, 300 - 30);
 
-        frame.add(status);
-        frame.add(progress);
-        frame.add(messages);
+        child.add(status);
+        child.add(progress);
+        child.add(messages);
+
+        frame.add(child);
 
         var button = new JButton("Open logs");
 
-        button.setBounds(10, 300, 160, 40);
+        button.setFont(font);
+        button.setBounds(10, 310, 160, 40);
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -103,7 +145,7 @@ public final class NoCrashWindow {
             }
         });
 
-        frame.add(button);
+        child.add(button);
 
         frame.setTitle("Minecraft crashed! | NoCrash");
         frame.setSize(500, 600);
@@ -150,20 +192,26 @@ public final class NoCrashWindow {
         var flex = new JPanel(new FlowLayout(FlowLayout.CENTER));
         var box = new JPanel(new BorderLayout(0, 0));
 
+        flex.setOpaque(false);
+        box.setOpaque(false);
 
         // Icon
         var icon = (ImageIcon) UIManager.get(iconForMessage(message), parent.getLocale());
             icon = scale(icon, 17, 17);
 
         // Border
+        box.setBackground(new Color(0x777777));
         box.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), new EmptyBorder(5, 6, 3, 3)));
 
         // Label
         var label = new JLabel(message.text(), icon, SwingConstants.LEFT);
+        label.setForeground(new Color(0xBCBCBC));
+        label.setFont(font.deriveFont(Font.PLAIN));
         box.add(label);
 
         AffineTransform affineTransform = new AffineTransform();
         affineTransform.translate(0, -1.4);
+        affineTransform.scale(.84, 1);
         label.setFont(label.getFont().deriveFont(affineTransform));
 
 
@@ -205,6 +253,7 @@ public final class NoCrashWindow {
         if (!message.children().isEmpty()) {
             var children = new JPanel();
 
+            children.setOpaque(false);
             children.setLayout(new BoxLayout(children, BoxLayout.PAGE_AXIS));
             children.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createEmptyBorder(0, 4, 0, 0),
@@ -277,6 +326,14 @@ public final class NoCrashWindow {
     private static byte[] read(String path) {
         try (var stream = NoCrashWindow.class.getResourceAsStream("/" + path)) {
             return stream.readAllBytes();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read resource: '%s'".formatted(path), e);
+        }
+    }
+
+    private static ByteArrayInputStream readToStream(String path) {
+        try (var stream = NoCrashWindow.class.getResourceAsStream("/" + path)) {
+            return new ByteArrayInputStream(stream.readAllBytes()); // Yeah I know it's quite unnecessary
         } catch (IOException e) {
             throw new RuntimeException("Failed to read resource: '%s'".formatted(path), e);
         }
