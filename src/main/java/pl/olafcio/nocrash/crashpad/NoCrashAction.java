@@ -12,6 +12,7 @@ import pl.olafcio.nocrash.crashpad.modscanner.analyzer.NonQuadTextures;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.AvoidMS;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.FabricMS;
 import pl.olafcio.nocrash.crashpad.modscanner.overviewer.DuplicateModDetector;
+import pl.olafcio.nocrash.crashpad.modscanner.overviewer.UnresolvedDependencyFinder;
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
 import pl.olafcio.nocrash.crashpad.scanner.errors.*;
 import pl.olafcio.nocrash.crashpad.scanner.warnings.*;
@@ -56,7 +57,8 @@ public final class NoCrashAction {
 
     private static final IModOverviewer[] overviewers
                    = new IModOverviewer[]{
-                            new DuplicateModDetector()
+                            new DuplicateModDetector(),
+                            new UnresolvedDependencyFinder()
                    };
 
     static void main() {
