@@ -35,6 +35,7 @@ public final class NoCrashAction {
                             new TextureStitchingError(),
                             new FMLModError(),
                             new FMLSuspectedMods(),
+                            new FMLEntrypointError(),
                             new RegistryObjectError()
                    };
 
