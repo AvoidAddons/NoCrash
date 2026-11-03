@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
@@ -74,7 +75,34 @@ public final class NoCrashAction {
 
         scanLogs(window);
         mapMods(window);
+        detectDuplicateMods(window);
         scanMods(window);
+    }
+
+    private void detectDuplicateMods(NoCrashWindow window) {
+        int i = 0;
+        var set = new HashSet<String>();
+
+        for (var mod : modobjects) {
+            final int g = i++;
+            final int exrs = errors;
+
+            window.exec(() -> {
+                window.setState("Detecting duplicate mods %d/%d  ==  Errors found: %d".formatted(g, modobjects.size(), exrs));
+                window.setProgress((float)g / modobjects.size());
+            });
+
+            if (!set.add(mod.mod.id())) {
+                errors++;
+
+                window.addMessage(new Message(
+                        MessageType.CRITICAL,
+                        MessageCategory.OTHER,
+                        "You have a duplicate mod: '%s' (%s)".formatted(mod.path.getFileName().toString(), mod.mod.id()),
+                        mod.path
+                ));
+            }
+        }
     }
 
     private int errors = 0;
