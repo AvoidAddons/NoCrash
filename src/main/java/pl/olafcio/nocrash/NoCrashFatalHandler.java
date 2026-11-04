@@ -6,7 +6,7 @@ public class NoCrashFatalHandler implements IPlatformFatal {
     @Override
     public void acknowledge(CrashEvent crashEvent) {
         try {
-            crashEvent.shouldDisplay(true);
+            crashEvent.shouldDisplay(false);
         } catch (Exception e) {
             // Ok
             return;
