@@ -93,7 +93,7 @@ public final class NoCrashAction {
         final int exrs = this.errors;
 
         window.exec(() -> {
-            window.setState("Finished  ==  Errors found: %d".formatted(exrs));
+            window.setState("Finished  ·  Errors found: %d".formatted(exrs));
             window.setProgress(1f);
         });
     }
@@ -102,7 +102,7 @@ public final class NoCrashAction {
         final int exrs = this.errors;
 
         window.exec(() -> {
-            window.setState("Checking for hs_err_pid  ==  Errors found: %d".formatted(exrs));
+            window.setState("Checking for hs_err_pid  ·  Errors found: %d".formatted(exrs));
             window.setProgress(1f / 2);
         });
 
@@ -135,7 +135,7 @@ public final class NoCrashAction {
             final int exrs = errors;
 
             window.exec(() -> {
-                window.setState("Overviewing mods %d/%d  ==  Errors found: %d".formatted(g, modobjects.size(), exrs));
+                window.setState("Overviewing mods %d/%d  ·  Errors found: %d".formatted(g, modobjects.size(), exrs));
                 window.setProgress((float)g / modobjects.size());
             });
 
@@ -160,7 +160,7 @@ public final class NoCrashAction {
             final int exrs = errors;
 
             window.exec(() -> {
-                window.setState("Scanning %d/%d  ==  Errors found: %d".formatted(g, scanners.length, exrs));
+                window.setState("Scanning %d/%d  ·  Errors found: %d".formatted(g, scanners.length, exrs));
                 window.setProgress((float)g / scanners.length);
             });
 
@@ -175,7 +175,7 @@ public final class NoCrashAction {
                 final int exrs2 = errors;
 
                 window.exec(() -> {
-                    window.setState("Scanning %d/%d  ==  Errors found: %d".formatted(g, scanners.length, exrs2));
+                    window.setState("Scanning %d/%d  ·  Errors found: %d".formatted(g, scanners.length, exrs2));
                     window.setProgress((float)g / scanners.length);
                 });
             }
@@ -198,7 +198,7 @@ public final class NoCrashAction {
             final int exrs = errors;
 
             window.exec(() -> {
-                window.setState("Iterating mods %d/%d  ==  Errors found: %d".formatted(g, 6, exrs));
+                window.setState("Iterating mods %d/%d  ·  Errors found: %d".formatted(g, 6, exrs));
                 window.setProgress((float) g / 6);
             });
 
@@ -237,7 +237,7 @@ public final class NoCrashAction {
                     final int exrs = errors;
 
                     window.exec(() -> {
-                        window.setState("Mapping mods %d/%d  ==  Errors found: %d".formatted(g, mappers.length * mods.size(), exrs));
+                        window.setState("Mapping mods %d/%d  ·  Errors found: %d".formatted(g, mappers.length * mods.size(), exrs));
                         window.setProgress((float) g / (mappers.length * mods.size()));
                     });
 
@@ -258,7 +258,7 @@ public final class NoCrashAction {
                 }
             }
         } catch (IOException e) {
-            window.setState("Failed to map mods!  ==  Errors found: %d".formatted(errors));
+            window.setState("Failed to map mods!  ·  Errors found: %d".formatted(errors));
         }
     }
 
@@ -271,7 +271,7 @@ public final class NoCrashAction {
                 final int exrs = errors;
 
                 window.exec(() -> {
-                    window.setState("Analyzing mods %d/%d  ==  Errors found: %d".formatted(g, analyzers.length * modobjects.size(), exrs));
+                    window.setState("Analyzing mods %d/%d  ·  Errors found: %d".formatted(g, analyzers.length * modobjects.size(), exrs));
                     window.setProgress((float) g / (analyzers.length * modobjects.size()));
                 });
 
