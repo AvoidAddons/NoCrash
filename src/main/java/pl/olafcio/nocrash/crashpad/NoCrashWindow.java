@@ -1,6 +1,9 @@
 package pl.olafcio.nocrash.crashpad;
 
 import org.jetbrains.annotations.NotNull;
+import pl.olafcio.commons.hastebin.BinFile;
+import pl.olafcio.commons.hastebin.Hastebin;
+import pl.olafcio.nocrash.crashpad.logcensor.LogCensor;
 import pl.olafcio.nocrash.crashpad.message.FixType;
 import pl.olafcio.nocrash.crashpad.message.Message;
 import pl.olafcio.nocrash.crashpad.message.MessageType;
@@ -9,6 +12,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicPanelUI;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -17,13 +21,20 @@ import java.awt.geom.AffineTransform;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public final class NoCrashWindow {
     private final Thread thread;
-    private final File logFile;
+    private final File   logFile;
+    private final String logs;
 
-    public NoCrashWindow(File logFile) {
+    public NoCrashWindow(File logFile, String logs) {
+        this.logs    = new LogCensor(logs).censor();
         this.logFile = logFile;
 
         this.thread = new Thread(this::show, "NoCrash/GUI");
@@ -118,10 +129,41 @@ public final class NoCrashWindow {
 
         frame.add(child);
 
+        child.add(button_openLogs(frame));
+        child.add(button_uploadLogs(frame));
+
+        frame.setTitle("Minecraft crashed! | NoCrash");
+        frame.setSize(500, 600);
+        frame.setLayout(null);
+        frame.setVisible(true);
+
+        frame.addWindowListener(new WindowAdapter()
+        {
+            @Override
+            public void windowClosing(WindowEvent e)
+            {
+                IO.println("[NoCrashWindow/INFO] Closing");
+
+                e.getWindow().dispose();
+                thread.interrupt();
+            }
+        });
+
+        while (true) {
+            try {
+                callback.take().run();
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
+    }
+
+    @NotNull
+    private JButton button_openLogs(JFrame frame) {
         var button = new JButton("Open logs");
 
         button.setFont(font);
-        button.setBounds(10, 310, 160, 40);
+        button.setBounds(10, 310, 140, 40);
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -149,32 +191,197 @@ public final class NoCrashWindow {
             }
         });
 
-        child.add(button);
+        return button;
+    }
 
-        frame.setTitle("Minecraft crashed! | NoCrash");
-        frame.setSize(500, 600);
-        frame.setLayout(null);
-        frame.setVisible(true);
+    @NotNull
+    private JButton button_uploadLogs(JFrame frame) {
+        var button = new JButton("<html><table><td align=\"center\" border=\"none\">Create Discord message asking for help</td></table></html>");
 
-        frame.addWindowListener(new WindowAdapter()
-        {
+        button.setFont(font);
+        button.setBounds(155, 310, 205, 40);
+        button.addMouseListener(new MouseAdapter() {
             @Override
-            public void windowClosing(WindowEvent e)
-            {
-                IO.println("[NoCrashWindow/INFO] Closing");
+            public void mouseClicked(MouseEvent e) {
+                if (logFile == null) {
+                    JOptionPane.showMessageDialog(
+                            frame,
+                            "Failed to create a Discord message: no log available",
+                            "Unable to create a Discord message",
+                            JOptionPane.ERROR_MESSAGE
+                    );
 
-                e.getWindow().dispose();
-                thread.interrupt();
+                    return;
+                }
+
+                var res = JOptionPane.showConfirmDialog(
+                        frame,
+                        "This will upload your logs without any sensitive data (e.g. access tokens will be censored). Do you consent?",
+                        "Creating a Discord message",
+                        JOptionPane.YES_NO_CANCEL_OPTION
+                );
+
+                if (res == JOptionPane.NO_OPTION) {
+                    JOptionPane.showMessageDialog(
+                            frame,
+                            "Cancelled creating message.",
+                            "Cancelled",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
+
+                if (res != JOptionPane.YES_OPTION)
+                    return;
+
+                var files = new ArrayList<String>();
+                var filesmsg = new ArrayList<String>();
+
+                files.add("logs/latest.log");
+                files.add("logs/debug.log");
+                files.add("logs/nocrash.log");
+
+                var noReport = new boolean[]{ true };
+
+                try (var reports = Files.list(Path.of("crash-reports"))) {
+                    reports.forEach(report -> {
+                        try {
+                            if (!Files.isDirectory(report) && System.currentTimeMillis() - Files.getLastModifiedTime(report).toMillis() < 13_000) {
+                                files.add(report.toString());
+                                noReport[0] = false;
+                            }
+                        } catch (IOException ex) {
+                            JOptionPane.showMessageDialog(
+                                    frame,
+                                    "Failed to upload file '%s' (I/O error); skipping\nTechnical information:\n\n".formatted(report.toString()) + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
+                                    "Unable to create a Discord message",
+                                    JOptionPane.WARNING_MESSAGE
+                            );
+                        }
+                    });
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(
+                            frame,
+                            "Failed to find a crash report (I/O error); skipping\nTechnical information:\n\n" + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
+                            "Unable to create a Discord message",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                }
+
+                try (var s = Files.list(Path.of("."))) {
+                    s.forEach(path -> {
+                        try {
+                            if (path.getFileName().toString().matches("hs_err_pid[0-9]+\\.log") && System.currentTimeMillis() - Files.getLastModifiedTime(path).toMillis() < 1000*16) {
+                                files.add(path.toString());
+                            }
+                        } catch (IOException ex) {
+                            JOptionPane.showMessageDialog(
+                                    frame,
+                                    "Failed to upload file '%s' (I/O error); skipping\nTechnical information:\n\n".formatted(path.toString()) + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
+                                    "Unable to create a Discord message",
+                                    JOptionPane.WARNING_MESSAGE
+                            );
+                        }
+                    });
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(
+                            frame,
+                            "Failed to find a hs_err_pid report (I/O error); skipping\nTechnical information:\n\n" + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
+                            "Unable to create a Discord message",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                }
+
+                for (var file : files) {
+                    var path = Path.of(file);
+
+                    final String binID;
+
+                    try {
+                        binID = Hastebin.create(List.of(
+                                new BinFile(file, new LogCensor(Files.readString(path, StandardCharsets.UTF_8)).censor())
+                        ), false, System.currentTimeMillis()/1000 + 60*60*24*3);
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(
+                                frame,
+                                "Failed to upload file '%s' (connection error)\nTechnical information:\n\n".formatted(file) + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
+                                "Unable to create a Discord message",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+
+                        return;
+                    }
+
+                    filesmsg.add("**[%s](%s)**".formatted(file, "https://olafcio1.github.io/logviewer/?" + binID));
+                }
+
+                var message = "Minecraft crashed%s. Here are the relevant links:\n".formatted(noReport[0] ? " without a crash report" : "") +
+                              "\n" +
+                              String.join(" ∕ ", filesmsg) +
+                              "\n\n" +
+                              "-# *Running NC %s*".formatted(State.nocrash);
+
+                try {
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
+                            new StringSelection(message),
+                            null
+                    );
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(
+                            frame,
+                            "Failed to copy message to clipboard; a Notepad window with it will be opened instead after clicking OK\nTechnical information:\n\n" + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
+                            "Unable to copy Discord message",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+
+                    var msgPath = Path.of(System.getProperty("TEMP"))
+                                      .resolve("nocrash_message.txt");
+
+                    try {
+                        Files.writeString(msgPath, message, StandardCharsets.UTF_8);
+
+                        Desktop.getDesktop().open(msgPath.toFile());
+                    } catch (IOException exc) {
+                        JOptionPane.showMessageDialog(
+                                frame,
+                                "Failed to open message in notepad; aborting\nTechnical information:\n\n" + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
+                                "Unable to open Discord message",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+
+                        return;
+                    }
+                }
+
+                var discord = State.modloader == null            ? null :
+                              State.modloader.equals("FORGE")    ? new Discord("Minecraft Forge Official", "https://discord.gg/UuM6bmAjXh") :
+                              State.modloader.equals("NEOFORGE") ? new Discord("The NeoForged Project",    "https://discord.gg/UvedJ9m")    :
+                              State.modloader.equals("FABRIC")   ? new Discord("The Fabric Project",       "https://discord.gg/v6v4pMv")    :
+                              State.modloader.equals("SPONGE")   ? new Discord("SpongePowered",            "https://discord.gg/sponge")    :
+                                                                   null;
+
+                if (discord == null) {
+                    JOptionPane.showMessageDialog(
+                            frame,
+                            "A Discord message has been created and saved to clipboard.\nYou can send it on a channel such as #player-support in a Discord for your platform (%s).".formatted(State.modloader),
+                            "Successfully created a Discord message",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                } else {
+                    var displayName = discord.displayName();
+                    if (!displayName.toLowerCase().startsWith("the"))
+                        displayName = "the " + displayName;
+
+                    JOptionPane.showMessageDialog(
+                            frame,
+                            "A Discord message has been created and saved to clipboard.\nYou can send it on a channel such as #player-support in e.g. %s Discord.\n\n(invite link: %s)".formatted(displayName, discord.inviteLink()),
+                            "Successfully created a Discord message",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
             }
         });
 
-        while (true) {
-            try {
-                callback.take().run();
-            } catch (InterruptedException e) {
-                return;
-            }
-        }
+        return button;
     }
 
     public void addMessage(Message message) {

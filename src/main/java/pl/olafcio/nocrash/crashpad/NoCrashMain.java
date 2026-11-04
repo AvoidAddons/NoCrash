@@ -28,10 +28,16 @@ public final class NoCrashMain {
         IO.println("| Avoid version       | %-14s |".formatted(args[3]));
         IO.println("|---------------------|----------------|");
 
+        State.modloader = args[1];
+
         IO.println("");
 
         try (var stream = NoCrashMain.class.getResourceAsStream("/nocrash_version.txt")) {
-            IO.println("---- Running NoCrash %s ----".formatted(new String(stream.readAllBytes(), StandardCharsets.UTF_8)));
+            var version = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+
+            IO.println("---- Running NoCrash %s ----".formatted(version));
+
+            State.nocrash = version;
         } catch (IOException e) {
             IO.println("[Main/ERROR] failed to resolve nocrash version");
         }

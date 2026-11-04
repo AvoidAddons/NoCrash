@@ -79,7 +79,7 @@ public final class NoCrashAction {
             return;
         }
 
-        var window = new NoCrashWindow(logFile == null ? null : logFile.toFile());
+        var window = new NoCrashWindow(logFile == null ? null : logFile.toFile(), logs);
         var ambient = new NoCrashAmbient();
 
         new Thread(ambient::play, "NoCrash/Ambient").start();
