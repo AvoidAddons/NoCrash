@@ -87,6 +87,43 @@ public final class NoCrashAction {
         mapMods(window);
         overviewMods(window);
         scanMods(window);
+        hsErrPid(window);
+
+        final int exrs = this.errors;
+
+        window.exec(() -> {
+            window.setState("Finished  ==  Errors found: %d".formatted(exrs));
+            window.setProgress(1f);
+        });
+    }
+
+    private void hsErrPid(NoCrashWindow window) {
+        final int exrs = this.errors;
+
+        window.exec(() -> {
+            window.setState("Checking for hs_err_pid  ==  Errors found: %d".formatted(exrs));
+            window.setProgress(1f / 2);
+        });
+
+        try (var files = Files.list(Path.of("."))) {
+            files.forEach(path -> {
+                try {
+                    if (path.getFileName().toString().matches("hs_err_pid[0-9]+\\.log") && System.currentTimeMillis() - Files.getLastModifiedTime(path).toMillis() < 1000*16) {
+                        errors++;
+
+                        window.addMessage(new Message(
+                                MessageType.CRITICAL,
+                                MessageCategory.JVM_ISSUE,
+                                "Your Minecraft might've not been assigned enough RAM (memory)"
+                        ));
+                    }
+                } catch (IOException e) {
+                    new RuntimeException("Failed to scan hs_err_pid file: '%s'".formatted(path.getFileName().toString()), e).printStackTrace();
+                }
+            });
+        } catch (IOException e) {
+            new RuntimeException("Failed to scan for hs_err_pid files", e).printStackTrace();
+        }
     }
 
     private void overviewMods(NoCrashWindow window) {
