@@ -13,8 +13,18 @@ import java.util.List;
 public final class UnresolvedDependencyFinder implements IModOverviewer {
     @Override
     public Collection<Message> overview(List<ModFile> modFiles) {
-        var ids = modFiles.stream().map(mod -> mod.mod().id()).toList();
+        var ids = new ArrayList<String>();
         var out = new ArrayList<Message>();
+
+        ids.add("java");
+        ids.add("minecraft");
+        ids.add("fabricloader");
+        ids.add("neoforge");
+        ids.add("forge");
+        ids.add("spongeapi");
+
+        for (var file : modFiles)
+            ids.add(file.mod().id());
 
         for (var mod : modFiles) {
             for (var depend : mod.mod().dependencies().keySet())
