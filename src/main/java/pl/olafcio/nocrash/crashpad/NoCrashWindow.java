@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 
 public final class NoCrashWindow {
@@ -84,7 +85,22 @@ public final class NoCrashWindow {
         }
     }
 
-    private synchronized void show() {
+    private final AtomicReference<Runnable> newestTask
+            = new AtomicReference<>();
+
+    public void race(Runnable runnable) {
+        if (Thread.currentThread() == thread) {
+            runnable.run();
+        } else {
+            synchronized (this) {
+                newestTask.set(runnable);
+
+                this.notify();
+            }
+        }
+    }
+
+    private void show() {
         var frame = new JFrame();
         var child = new JPanel();
 
@@ -150,9 +166,45 @@ public final class NoCrashWindow {
             }
         });
 
+        var thread = new Thread(this::raceProcessing, "NoCrash/Race");
+        thread.setDaemon(true);
+        thread.start();
+
+        queueProcessing(frame);
+    }
+
+    private synchronized void raceProcessing() {
+        while (true) {
+            for (int i = 0; i < 2; i++) {
+                try {
+                    this.wait(80L);
+                } catch (InterruptedException e) {
+                    IO.println("[NoCrashWindow/INFO] [RaceProcessing] Interrupting");
+                    return;
+                }
+            }
+
+            if (newestTask.get() == null)
+                continue;
+
+            callback.add(newestTask.getAndSet(null));
+        }
+    }
+
+    private void queueProcessing(JFrame frame) {
         while (true) {
             try {
-                callback.take().run();
+                var fun = callback.take();
+
+                // Swing, WHAT THE FUCK
+                SwingUtilities.invokeLater(() -> {
+                    fun.run();
+
+                    var val = frame.getSize();
+
+                    frame.setSize(0, 0);
+                    frame.setSize(val);
+                });
             } catch (InterruptedException e) {
                 return;
             }

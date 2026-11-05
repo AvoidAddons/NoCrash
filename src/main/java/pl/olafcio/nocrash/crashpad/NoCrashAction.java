@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
@@ -114,7 +113,7 @@ public final class NoCrashAction {
 
         final int exrs = this.errors;
 
-        window.exec(() -> {
+        window.race(() -> {
             window.setState("Finished  ·  Errors found: %d".formatted(exrs));
             window.setProgress(1f);
         });
@@ -123,7 +122,7 @@ public final class NoCrashAction {
     private void hsErrPid(NoCrashWindow window) {
         final int exrs = this.errors;
 
-        window.exec(() -> {
+        window.race(() -> {
             window.setState("Checking for hs_err_pid  ·  Errors found: %d".formatted(exrs));
             window.setProgress(1f / 2);
         });
@@ -157,7 +156,7 @@ public final class NoCrashAction {
             final int g = i++;
             final int exrs = errors;
 
-            window.exec(() -> {
+            window.race(() -> {
                 window.setState("Overviewing mods %d/%d  ·  Errors found: %d".formatted(g, modobjects.size(), exrs));
                 window.setProgress((float)g / modobjects.size());
             });
@@ -182,7 +181,7 @@ public final class NoCrashAction {
             final int g = i;
             final int exrs = errors;
 
-            window.exec(() -> {
+            window.race(() -> {
                 window.setState("Scanning %d/%d  ·  Errors found: %d".formatted(g, scanners.length, exrs));
                 window.setProgress((float)g / scanners.length);
             });
@@ -197,7 +196,7 @@ public final class NoCrashAction {
 
                 final int exrs2 = errors;
 
-                window.exec(() -> {
+                window.race(() -> {
                     window.setState("Scanning %d/%d  ·  Errors found: %d".formatted(g, scanners.length, exrs2));
                     window.setProgress((float)g / scanners.length);
                 });
@@ -220,7 +219,7 @@ public final class NoCrashAction {
             final int g = i++;
             final int exrs = errors;
 
-            window.exec(() -> {
+            window.race(() -> {
                 window.setState("Iterating mods %d/%d  ·  Errors found: %d".formatted(g, 6, exrs));
                 window.setProgress((float) g / 6);
             });
@@ -260,7 +259,7 @@ public final class NoCrashAction {
                     final int g = i;
                     final int exrs = errors;
 
-                    window.exec(() -> {
+                    window.race(() -> {
                         window.setState("Mapping mods %d/%d  ·  Errors found: %d".formatted(g, mappers.length * mods.size(), exrs));
                         window.setProgress((float) g / (mappers.length * mods.size()));
                     });
@@ -282,7 +281,9 @@ public final class NoCrashAction {
                 }
             }
         } catch (IOException e) {
-            window.setState("Failed to map mods!  ·  Errors found: %d".formatted(errors));
+            window.race(() -> {
+                window.setState("Failed to map mods!  ·  Errors found: %d".formatted(errors));
+            });
         }
     }
 
@@ -294,7 +295,7 @@ public final class NoCrashAction {
                 final int g = i;
                 final int exrs = errors;
 
-                window.exec(() -> {
+                window.race(() -> {
                     window.setState("Analyzing mods %d/%d  ·  Errors found: %d".formatted(g, analyzers.length * modobjects.size(), exrs));
                     window.setProgress((float) g / (analyzers.length * modobjects.size()));
                 });
