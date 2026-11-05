@@ -23,6 +23,7 @@ public final class DuplicateModDetector implements IModOverviewer {
                         MessageType.CRITICAL,
                         MessageCategory.OTHER,
                         "You have a duplicate mod: '%s' (%s)".formatted(mod.path().getFileName().toString(), mod.mod().id()),
+                        "",
                         mod.path()
                 ));
             }

@@ -416,8 +416,12 @@ public final class NoCrashWindow {
 
         // Label
         var label = new JLabel(message.text(), icon, SwingConstants.LEFT);
+
+        label.setToolTipText(message.technical());
+
         label.setForeground(new Color(0xBCBCBC));
         label.setFont(font.deriveFont(Font.PLAIN));
+
         box.add(label);
 
         AffineTransform affineTransform = new AffineTransform();

@@ -23,6 +23,7 @@ public final class AvoidSignaturesError implements IScanner {
                 MessageType.ERROR,
                 MessageCategory.MOD_BROKEN,
                 "Mod '%s' is broken".formatted(Arrays.stream(path.replace("\\", "/").split("/")).toList().getLast()),
+                "Mod '%s' has an invalid signatures file".formatted(Arrays.stream(path.replace("\\", "/").split("/")).toList().getLast()),
                 Path.of(path)
         );
     }

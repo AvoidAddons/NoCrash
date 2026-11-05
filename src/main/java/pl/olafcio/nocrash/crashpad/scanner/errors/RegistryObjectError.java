@@ -18,7 +18,8 @@ public final class RegistryObjectError implements IScanner {
         return new Message(
                 MessageType.ERROR,
                 MessageCategory.MOD_BROKEN,
-                "Mod '%s' may be broken".formatted(matcher.group(1))
+                "Mod '%s' may be broken".formatted(matcher.group(1)),
+                "Registry object not present: '%s:%s'".formatted(matcher.group(1), matcher.group(2))
         );
     }
 }

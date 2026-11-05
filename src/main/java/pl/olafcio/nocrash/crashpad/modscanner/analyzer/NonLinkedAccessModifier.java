@@ -39,7 +39,8 @@ public final class NonLinkedAccessModifier implements IModAnalyzer {
                 return new Message(
                         MessageType.WARNING,
                         MessageCategory.MOD_BROKEN,
-                        "Mod '%s' is broken".formatted(mod.id()),
+                        "Mod '%s' may be broken".formatted(mod.id()),
+                        "Mod '%s' includes an AW/AT/CT without using it".formatted(mod.id()),
                         path
                 );
         }

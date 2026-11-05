@@ -46,6 +46,7 @@ public final class FMLTypoError implements IScanner {
                 MessageType.ERROR,
                 MessageCategory.MOD_BROKEN,
                 "Mod '%s' is broken".formatted(filename),
+                "Mod '%s' has broken TOML".formatted(filename),
                 path
         );
     }

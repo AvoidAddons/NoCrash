@@ -117,7 +117,8 @@ public final class NoCrashAction {
                         window.addMessage(new Message(
                                 MessageType.CRITICAL,
                                 MessageCategory.JVM_ISSUE,
-                                "Your Minecraft might've not been assigned enough RAM (memory)"
+                                "Your Minecraft might've not been assigned enough RAM (memory)",
+                                "%s file present".formatted(path.getFileName().toString())
                         ));
                     }
                 } catch (IOException e) {
@@ -218,7 +219,8 @@ public final class NoCrashAction {
                 window.addMessage(new Message(
                         MessageType.ERROR,
                         MessageCategory.OTHER,
-                        "Unable to use directory: %s".formatted(folder)
+                        "Unable to use directory: %s".formatted(folder),
+                        "I/O error"
                 ));
             }
         }

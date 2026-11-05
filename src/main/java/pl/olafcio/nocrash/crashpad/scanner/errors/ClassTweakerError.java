@@ -18,7 +18,8 @@ public final class ClassTweakerError implements IScanner {
         return new Message(
                 MessageType.ERROR,
                 MessageCategory.MOD_INCOMPATIBILITY,
-                "Mod '%s' is incompatible with your Minecraft version".formatted(matcher.group(1))
+                "Mod '%s' is incompatible with your Minecraft version".formatted(matcher.group(1)),
+                "Mod '%s' failed to have the classTweaker file loaded".formatted(matcher.group(1))
         );
     }
 }

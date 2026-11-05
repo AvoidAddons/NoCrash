@@ -10,7 +10,7 @@ import java.util.regex.Matcher;
 public final class FMLModError implements IScanner {
     @Override
     public String regex() {
-        return "ModLoadingException: (.+) \\((.+)\\) encountered an ";
+        return "ModLoadingException: (.+) \\((.+)\\) encountered an (.*)";
     }
 
     @Override
@@ -18,7 +18,8 @@ public final class FMLModError implements IScanner {
         return new Message(
                 MessageType.ERROR,
                 MessageCategory.MOD_BROKEN,
-                "Mod '%s' (%s) is broken".formatted(matcher.group(1), matcher.group(2))
+                "Mod '%s' (%s) is broken".formatted(matcher.group(1), matcher.group(2)),
+                "Mod '%s' (%s) encountered an %s".formatted(matcher.group(1), matcher.group(2), matcher.group(3))
         );
     }
 }

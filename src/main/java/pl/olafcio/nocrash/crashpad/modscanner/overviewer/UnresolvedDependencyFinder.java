@@ -32,7 +32,8 @@ public final class UnresolvedDependencyFinder implements IModOverviewer {
                     out.add(new Message(
                             MessageType.CRITICAL,
                             MessageCategory.OTHER,
-                            "You have a missing dependency: '%s'".formatted(depend)
+                            "You have a missing dependency: '%s'".formatted(depend),
+                            "From mod: '%s'".formatted(mod.path().getFileName().toString())
                     ));
                 }
         }

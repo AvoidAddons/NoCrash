@@ -18,7 +18,8 @@ public final class ItemDoesNotExistError implements IScanner {
         return new Message(
                 MessageType.ERROR,
                 MessageCategory.MOD_BROKEN,
-                "Mod '%s' is broken".formatted(matcher.group(1))
+                "Mod '%s' is broken".formatted(matcher.group(1)),
+                "Tried to load an item with the ID %s:%s".formatted(matcher.group(1), matcher.group(2))
         );
     }
 }

@@ -20,7 +20,7 @@ public final class MixinRuntimeError implements IScanner {
     @Override
     public Message message(Matcher matcher) {
         String[] stack = matcher.group(2).split("\n");
-        Pattern pattern = Pattern.compile("handler\\$.+?\\$(.+)\\$");
+        Pattern pattern = Pattern.compile("handler\\$(.+?)\\$(.+)\\$");
 
         var matches = Arrays.stream(stack)
                             .map(pattern::matcher)
@@ -31,12 +31,13 @@ public final class MixinRuntimeError implements IScanner {
 
         for (int i = 1; i < matches.size(); i++) {
             var match = matches.get(i);
-            var modID = match.group(1);
+            var modID = match.group(2);
 
             children.put(modID, new Message(
                     MessageType.WARNING,
                     MessageCategory.MOD_INCOMPATIBILITY,
-                    "Mod '%s' has been mentioned lower".formatted(modID)
+                    "Mod '%s' has been mentioned lower".formatted(modID),
+                    match.group(1)
             ));
         }
 
@@ -45,7 +46,8 @@ public final class MixinRuntimeError implements IScanner {
                 MessageCategory.MOD_INCOMPATIBILITY,
                 "Mod '%s' has crashed within a mixin".formatted(Optional.ofNullable(matches.getFirst())
                                                                         .orElseThrow(() -> new RuntimeException("Failed to find mods in the stacktrace of a mixin issue"))
-                                                                        .group(1)),
+                                                                        .group(2)),
+                matches.getFirst().group(1),
                 children.values()
         );
     }

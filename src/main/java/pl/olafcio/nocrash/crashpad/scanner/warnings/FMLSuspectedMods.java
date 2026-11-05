@@ -23,7 +23,8 @@ public final class FMLSuspectedMods implements IScanner {
                                      new Message(
                                             MessageType.WARNING,
                                             MessageCategory.OTHER,
-                                            str
+                                            str,
+                                            ""
                                     )
                              )
                              .toList();
@@ -32,6 +33,7 @@ public final class FMLSuspectedMods implements IScanner {
                 MessageType.WARNING,
                 MessageCategory.OTHER,
                 "Forge/NeoForge suspects the following mods to be the culprit:",
+                "Suspected mods",
                 children
         );
     }

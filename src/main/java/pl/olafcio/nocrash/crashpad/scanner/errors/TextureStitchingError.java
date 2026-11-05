@@ -20,7 +20,8 @@ public final class TextureStitchingError implements IScanner {
         return new Message(
                 MessageType.ERROR,
                 MessageCategory.MOD_BROKEN,
-                "Mod/resource pack '%s' is broken".formatted(matcher.group(1))
+                "Mod/resource pack '%s' is broken".formatted(matcher.group(1)),
+                "Unable to fit: '%s:%s' - size: %sx%s".formatted(matcher.group(1), matcher.group(2), matcher.group(3), matcher.group(4))
         );
     }
 }

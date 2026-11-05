@@ -14,6 +14,7 @@ public record Message(
         MessageType type,
         MessageCategory category,
         String text,
+        String technical,
         Runnable autoFix,
         FixType autoFixType,
         Collection<Message> children
@@ -22,36 +23,40 @@ public record Message(
             MessageType type,
             MessageCategory category,
             String text,
+            String technical,
             Runnable autoFix,
             FixType autoFixType
     ) {
-        this(type, category, text, autoFix, autoFixType, List.of());
-    }
-
-    public Message(
-            MessageType type,
-            MessageCategory category,
-            String text
-    ) {
-        this(type, category, text, null, FixType.UNAVAILABLE);
+        this(type, category, text, technical, autoFix, autoFixType, List.of());
     }
 
     public Message(
             MessageType type,
             MessageCategory category,
             String text,
+            String technical
+    ) {
+        this(type, category, text, technical, null, FixType.UNAVAILABLE);
+    }
+
+    public Message(
+            MessageType type,
+            MessageCategory category,
+            String text,
+            String technical,
             Collection<Message> children
     ) {
-        this(type, category, text, null, FixType.UNAVAILABLE, children);
+        this(type, category, text, technical, null, FixType.UNAVAILABLE, children);
     }
 
     public Message(
             MessageType type,
             MessageCategory category,
             String text,
+            String technical,
             Path badResource
     ) {
-        this(type, category, text, () -> {
+        this(type, category, text, technical, () -> {
             try {
                 Files.delete(badResource);
             } catch (IOException e) {

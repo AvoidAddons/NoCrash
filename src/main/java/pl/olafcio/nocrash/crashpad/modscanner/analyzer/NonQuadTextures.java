@@ -39,6 +39,7 @@ public final class NonQuadTextures implements IModAnalyzer {
                             MessageType.WARNING,
                             MessageCategory.MOD_INCOMPATIBILITY,
                             "Mod '%s' uses textures that cannot be loaded".formatted(mod.id()),
+                            "Mod '%s' failed to have image analysis performed on due to I/O error".formatted(mod.id()),
                             path
                     );
                 }
@@ -59,6 +60,7 @@ public final class NonQuadTextures implements IModAnalyzer {
                     return new Message(
                             MessageType.WARNING,
                             MessageCategory.MOD_INCOMPATIBILITY,
+                            "Mod '%s' uses textures that the size of is not a power of 2".formatted(mod.id()),
                             "Mod '%s' uses textures that the size of is not a power of 2".formatted(mod.id()),
                             path
                     );

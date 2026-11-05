@@ -18,7 +18,8 @@ public final class FMLEntrypointError implements IScanner {
         return new Message(
                 MessageType.ERROR,
                 MessageCategory.MOD_BROKEN,
-                "Mod '%s' is broken".formatted(matcher.group(2))
+                "Mod '%s' is broken".formatted(matcher.group(2)),
+                "Mod '%s' crashed in stage %s".formatted(matcher.group(2), matcher.group(1))
         );
     }
 }
