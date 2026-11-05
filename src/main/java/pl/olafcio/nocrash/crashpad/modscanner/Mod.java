@@ -3,6 +3,8 @@ package pl.olafcio.nocrash.crashpad.modscanner;
 import com.google.gson.JsonObject;
 import org.jspecify.annotations.NullMarked;
 
+import java.util.List;
+
 @NullMarked
 public record Mod(
         String id,
@@ -15,5 +17,7 @@ public record Mod(
 
         JsonObject dependencies,
 
-        Platform platform
+        Platform platform,
+
+        List<String> accessModifiers
 ) {}

@@ -9,6 +9,7 @@ import pl.olafcio.nocrash.crashpad.modscanner.Platform;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import java.util.jar.JarFile;
 
@@ -35,7 +36,8 @@ public final class AvoidMS implements IModMapper {
                         Objects.requireNonNullElse(json.get("author"), new JsonPrimitive("---MISSING---")).getAsString(),
                         Objects.requireNonNullElse(json.get("version"), new JsonPrimitive("---MISSING---")).getAsString(),
                         Objects.requireNonNullElse(json.get("dependencies"), new JsonObject()).getAsJsonObject(),
-                        Platform.AVOID
+                        Platform.AVOID,
+                        List.of()  // no AW-s in Avoid yet :(
                 )
         };
     }
