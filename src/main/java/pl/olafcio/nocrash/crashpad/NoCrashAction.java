@@ -12,10 +12,7 @@ import pl.olafcio.nocrash.crashpad.modscanner.analyzer.NonLinkedAccessModifier;
 import pl.olafcio.nocrash.crashpad.modscanner.analyzer.NonQuadTextures;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.AvoidMS;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.FabricMS;
-import pl.olafcio.nocrash.crashpad.modscanner.overviewer.CreateAndGalosphere;
-import pl.olafcio.nocrash.crashpad.modscanner.overviewer.DuplicateModDetector;
-import pl.olafcio.nocrash.crashpad.modscanner.overviewer.IrisXe;
-import pl.olafcio.nocrash.crashpad.modscanner.overviewer.UnresolvedDependencyFinder;
+import pl.olafcio.nocrash.crashpad.modscanner.overviewer.*;
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
 import pl.olafcio.nocrash.crashpad.scanner.errors.*;
 import pl.olafcio.nocrash.crashpad.scanner.warnings.*;
@@ -64,7 +61,8 @@ public final class NoCrashAction {
                             new DuplicateModDetector(),
                             new UnresolvedDependencyFinder(),
                             new CreateAndGalosphere(),
-                            new IrisXe()
+                            new IrisXe(),
+                            new FarmersOPlenty()
                    };
 
     static void main() {
