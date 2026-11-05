@@ -243,30 +243,33 @@ public final class NoCrashWindow {
                 files.add("logs/nocrash.log");
 
                 var noReport = new boolean[]{ true };
+                var reportFolder = Path.of("crash-reports");
 
-                try (var reports = Files.list(Path.of("crash-reports"))) {
-                    reports.forEach(report -> {
-                        try {
-                            if (!Files.isDirectory(report) && System.currentTimeMillis() - Files.getLastModifiedTime(report).toMillis() < 13_000) {
-                                files.add(report.toString());
-                                noReport[0] = false;
+                if (Files.isDirectory(reportFolder)) {
+                    try (var reports = Files.list(reportFolder)) {
+                        reports.forEach(report -> {
+                            try {
+                                if (!Files.isDirectory(report) && System.currentTimeMillis() - Files.getLastModifiedTime(report).toMillis() < 13_000) {
+                                    files.add(report.toString());
+                                    noReport[0] = false;
+                                }
+                            } catch (IOException ex) {
+                                JOptionPane.showMessageDialog(
+                                        frame,
+                                        "Failed to upload file '%s' (I/O error); skipping\nTechnical information:\n\n".formatted(report.toString()) + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
+                                        "Unable to create a Discord message",
+                                        JOptionPane.WARNING_MESSAGE
+                                );
                             }
-                        } catch (IOException ex) {
-                            JOptionPane.showMessageDialog(
-                                    frame,
-                                    "Failed to upload file '%s' (I/O error); skipping\nTechnical information:\n\n".formatted(report.toString()) + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
-                                    "Unable to create a Discord message",
-                                    JOptionPane.WARNING_MESSAGE
-                            );
-                        }
-                    });
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(
-                            frame,
-                            "Failed to find a crash report (I/O error); skipping\nTechnical information:\n\n" + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
-                            "Unable to create a Discord message",
-                            JOptionPane.WARNING_MESSAGE
-                    );
+                        });
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(
+                                frame,
+                                "Failed to find a crash report (I/O error); skipping\nTechnical information:\n\n" + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
+                                "Unable to create a Discord message",
+                                JOptionPane.WARNING_MESSAGE
+                        );
+                    }
                 }
 
                 try (var s = Files.list(Path.of("."))) {
