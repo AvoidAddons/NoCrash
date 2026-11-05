@@ -265,12 +265,11 @@ public final class NoCrashAction {
                     i++;
 
                     try {
-                        var map = mapper.map(jar);
-                        if (map.length == 0)
+                        var map = mapper.map(jar, mod);
+                        if (map.isEmpty())
                             continue;
 
-                        for (var modN : map)
-                            modobjects.add(new ModFile(modN, mod, jar));
+                        modobjects.addAll(map);
                     } catch (Throwable ignored) {
                         continue;
                     }
