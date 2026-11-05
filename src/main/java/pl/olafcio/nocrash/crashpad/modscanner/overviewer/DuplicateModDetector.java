@@ -18,7 +18,11 @@ public final class DuplicateModDetector implements IModOverviewer {
         var out = new ArrayList<Message>();
 
         for (var mod : modFiles) {
-            if (!set.add(mod.mod().id())) {
+            if (
+                    !set.add(mod.mod().id()) &&
+                    /*JIJ*/ !mod.jar().getName().startsWith(".nocrash")
+            )
+            {
                 out.add(new Message(
                         MessageType.CRITICAL,
                         MessageCategory.OTHER,
