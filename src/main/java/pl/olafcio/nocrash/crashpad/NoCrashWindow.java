@@ -138,7 +138,7 @@ public final class NoCrashWindow {
         var pane = new JScrollPane(messages);
 
         pane.setBorder(BorderFactory.createEmptyBorder());
-        pane.setBounds(0, 30, 500, 300 - 30);
+        pane.setBounds(0, 30, 500 - 17, 300 - 30);
 
         child.add(status);
         child.add(progress);
@@ -647,6 +647,61 @@ public final class NoCrashWindow {
 
         public VerticalLayout(int align, int hgap, int vgap) {
             super(align, hgap, vgap);
+        }
+
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        // I FUCKING HATE SWING
+        public Dimension preferredLayoutSize(Container target) {
+            synchronized (target.getTreeLock()) {
+                Dimension dim = new Dimension(0, 0);
+                int nmembers = target.getComponentCount();
+                boolean firstVisibleComponent = true;
+                boolean useBaseline = getAlignOnBaseline();
+                int maxAscent = 0;
+                int maxDescent = 0;
+
+                for (int i = 0 ; i < nmembers ; i++) {
+                    Component m = target.getComponent(i);
+                    if (m.isVisible()) {
+                        Dimension d = m.getPreferredSize();
+                        dim.width = Math.max(dim.width, d.width);
+                        if (firstVisibleComponent) {
+                            firstVisibleComponent = false;
+                        }
+                        dim.height += d.height;
+                        if (useBaseline) {
+                            int baseline = m.getBaseline(d.width, d.height);
+                            if (baseline >= 0) {
+                                maxAscent = Math.max(maxAscent, baseline);
+                                maxDescent = Math.max(maxDescent, d.height - baseline);
+                            }
+                        }
+                    }
+                }
+                if (useBaseline) {
+                    dim.width = Math.max(maxAscent + maxDescent, dim.width);
+                }
+                Insets insets = target.getInsets();
+                dim.width += insets.left + insets.right + getHgap()*2;
+                dim.height += insets.top + insets.bottom + getVgap()*2;
+                return dim;
+            }
         }
 
         @Override
