@@ -27,6 +27,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 public final class NoCrashWindow {
     private final Thread thread;
@@ -233,7 +235,7 @@ public final class NoCrashWindow {
                 if (res != JOptionPane.YES_OPTION)
                     return;
 
-                var files = new ArrayList<String>();
+                var files = new ArrayList<>();
                 var filesmsg = new ArrayList<String>();
 
                 files.add("logs/latest.log");
@@ -271,7 +273,10 @@ public final class NoCrashWindow {
                     s.forEach(path -> {
                         try {
                             if (path.getFileName().toString().matches("hs_err_pid[0-9]+\\.log") && System.currentTimeMillis() - Files.getLastModifiedTime(path).toMillis() < 1000*16) {
-                                files.add(path.toString());
+                                files.add(new Object[]{
+                                        path.toString(),
+                                        (UnaryOperator<String>) data -> data.split("------")[0]
+                                });
                             }
                         } catch (IOException ex) {
                             JOptionPane.showMessageDialog(
@@ -291,14 +296,25 @@ public final class NoCrashWindow {
                     );
                 }
 
-                for (var file : files) {
+                for (var object : files) {
+                    final String file;
+                    final UnaryOperator<String> transformer;
+
+                    if (object instanceof String str) {
+                        file = str;
+                        transformer = UnaryOperator.identity();
+                    } else {
+                        file        = (String) ((Object[]) object)[0];
+                        transformer = (UnaryOperator<String>) ((Object[]) object)[1];
+                    }
+
                     var path = Path.of(file);
 
                     final String binID;
 
                     try {
                         binID = Hastebin.create(List.of(
-                                new BinFile(file, new LogCensor(Files.readString(path, StandardCharsets.UTF_8)).censor())
+                                new BinFile(file, transformer.apply(new LogCensor(Files.readString(path, StandardCharsets.UTF_8)).censor()))
                         ), false, System.currentTimeMillis()/1000 + 60*60*24*3);
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(
