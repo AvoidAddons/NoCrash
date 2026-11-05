@@ -19,7 +19,7 @@ public class LogCensor {
 
     private void hideAT() {
         this.logs = this.logs.replaceAll("SignedJWT: ([a-zA-Z0-9-_+.]+?)", "SignedJWT: ??");
-        this.logs = this.logs.replaceAll("ey(?![ -])+", "??");
+        this.logs = this.logs.replaceAll("ey((?! ).)+", "??");
     }
 
     private void hideNick() {
