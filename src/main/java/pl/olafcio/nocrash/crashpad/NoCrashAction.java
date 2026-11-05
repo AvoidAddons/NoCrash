@@ -12,6 +12,7 @@ import pl.olafcio.nocrash.crashpad.modscanner.analyzer.NonLinkedAccessModifier;
 import pl.olafcio.nocrash.crashpad.modscanner.analyzer.NonQuadTextures;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.AvoidMS;
 import pl.olafcio.nocrash.crashpad.modscanner.mapper.FabricMS;
+import pl.olafcio.nocrash.crashpad.modscanner.overviewer.CreateAndGalosphere;
 import pl.olafcio.nocrash.crashpad.modscanner.overviewer.DuplicateModDetector;
 import pl.olafcio.nocrash.crashpad.modscanner.overviewer.UnresolvedDependencyFinder;
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
@@ -61,11 +62,26 @@ public final class NoCrashAction {
     private static final IModOverviewer[] overviewers
                    = new IModOverviewer[]{
                             new DuplicateModDetector(),
-                            new UnresolvedDependencyFinder()
+                            new UnresolvedDependencyFinder(),
+                            new CreateAndGalosphere()
                    };
 
     static void main() {
         new NoCrashAction();
+    }
+
+    private String findMCVersion() {
+        var lines = this.logs.split("\n");
+
+        for (var line : lines) {
+            if (line.contains("Launching target 'forge_client' with arguments [--version,")) {
+                return line.substring(line.indexOf("Launching target 'forge_client' with arguments [--version, ") + 59).split(",")[0].trim();
+            } else if (line.contains("Loading Minecraft ")) {
+                return line.substring(line.indexOf("Loading Minecraft ") + 18).split(" ")[0];
+            }
+        }
+
+        return "[missingver-1]";
     }
 
     public NoCrashAction() {
@@ -80,6 +96,8 @@ public final class NoCrashAction {
             IO.println("[NoCrashAction/INFO] Minecraft's window seems to have been shown");
             return;
         }
+
+        State.minecraft = findMCVersion();
 
         var window = new NoCrashWindow(logFile == null ? null : logFile.toFile(), logs);
         var ambient = new NoCrashAmbient();

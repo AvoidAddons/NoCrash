@@ -27,7 +27,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public final class NoCrashWindow {
@@ -479,7 +478,7 @@ public final class NoCrashWindow {
                     // } catch (AWTException e) {
                     // new RuntimeException("Failed to set cursor", e).printStackTrace();
                 }
-            }, fixType.getTooltip(), ICON_DELETE));
+            }, fixType.getTooltip(), getIconForFix(fixType)));
         }
 
         parent.add(flex);
@@ -502,6 +501,15 @@ public final class NoCrashWindow {
 
             parent.add(children);
         }
+    }
+
+    private static Icon getIconForFix(FixType fixType) {
+        if (fixType == FixType.DELETE)
+            return ICON_DELETE;
+        else if (fixType == FixType.DOWNLOAD)
+            return ICON_DOWNLOAD;
+        else
+            throw new RuntimeException("Tried to get icon for non-available fix: %s".formatted(fixType));
     }
 
     @NotNull
@@ -574,6 +582,7 @@ public final class NoCrashWindow {
     }
 
     private static final Icon ICON_DELETE = scale(new ImageIcon(read("icons/delete.png")), 20, 20);
+    private static final Icon ICON_DOWNLOAD = scale(new ImageIcon(read("icons/download.png")), 20, 20);
     private static final Icon ICON_CHECK = scale(new ImageIcon(read("icons/checkmark.png")), 20, 20);
 
     private static class VerticalLayout extends FlowLayout {

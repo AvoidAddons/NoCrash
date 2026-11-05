@@ -1,6 +1,8 @@
 package pl.olafcio.nocrash.crashpad.message;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -63,5 +65,29 @@ public record Message(
                 throw new QuickFixFailed("Failed to delete mod: '%s'".formatted(badResource.toAbsolutePath().toString()), 2, e);
             }
         }, FixType.DELETE);
+    }
+
+    public Message(
+            MessageType type,
+            MessageCategory category,
+            String text,
+            String technical,
+            URI toDownload
+    ) {
+        this(type, category, text, technical, () -> {
+            try {
+                var conn = toDownload.toURL()
+                                     .openConnection();
+
+                conn.setDoInput(true);
+                conn.connect();
+
+                try (var out = new FileOutputStream(Path.of("./mods/create_repair-fabric-1.20.1-1.3.0.jar").toFile())) {
+                    conn.getInputStream().transferTo(out);
+                }
+            } catch (IOException e) {
+                throw new QuickFixFailed("Failed to download 'Create Repair' mod", 3, e);
+            }
+        }, FixType.DOWNLOAD);
     }
 }

@@ -2,6 +2,7 @@ package pl.olafcio.nocrash.crashpad.message;
 
 public enum FixType {
     UNAVAILABLE("A fix is not available"),
+    DOWNLOAD("Download", "This will download the recommended mod.", "Download mod"),
     DELETE("Delete", "This will delete the bad mod.", "Delete mod");
 
     private final String title;
