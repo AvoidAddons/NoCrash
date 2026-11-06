@@ -293,6 +293,9 @@ public final class NoCrashWindow {
                 files.add("logs/debug.log");
                 files.add("logs/nocrash.log");
 
+                files.add(".nocrash/stdout.log");
+                files.add(".nocrash/stderr.log");
+
                 var noReport = new boolean[]{ true };
                 var reportFolder = Path.of("crash-reports");
 
