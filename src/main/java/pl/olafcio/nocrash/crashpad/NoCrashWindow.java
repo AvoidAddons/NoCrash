@@ -202,7 +202,7 @@ public final class NoCrashWindow {
 
                     var val = frame.getSize();
 
-                    frame.setSize(0, 0);
+                    frame.setSize(val.width - 1, val.height - 1);
                     frame.setSize(val);
                 });
             } catch (InterruptedException e) {
