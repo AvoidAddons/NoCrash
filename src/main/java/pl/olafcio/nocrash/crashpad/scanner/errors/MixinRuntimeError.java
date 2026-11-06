@@ -37,7 +37,7 @@ public final class MixinRuntimeError implements IScanner {
                     MessageType.WARNING,
                     MessageCategory.MOD_INCOMPATIBILITY,
                     "Mod '%s' has been mentioned lower".formatted(modID),
-                    match.group(1)
+                    "Handler ID: " + match.group(1)
             ));
         }
 
@@ -47,7 +47,7 @@ public final class MixinRuntimeError implements IScanner {
                 "Mod '%s' has crashed within a mixin".formatted(Optional.ofNullable(matches.getFirst())
                                                                         .orElseThrow(() -> new RuntimeException("Failed to find mods in the stacktrace of a mixin issue"))
                                                                         .group(2)),
-                matches.getFirst().group(1),
+                "Handler ID: " + matches.getFirst().group(1),
                 children.values()
         );
     }
