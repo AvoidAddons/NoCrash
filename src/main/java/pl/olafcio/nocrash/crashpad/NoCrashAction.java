@@ -63,6 +63,7 @@ public final class NoCrashAction {
                             new DuplicateModDetector(),
                             new UnresolvedDependencyFinder(),
                             new CreateAndGalosphere(),
+                            new CreateAndStarlight(),
                             new IrisXe(),
                             new FarmersOPlenty()
                    };
