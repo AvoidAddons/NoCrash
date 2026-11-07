@@ -1,6 +1,10 @@
 package pl.olafcio.nocrash.crashpad;
 
 import org.jetbrains.annotations.NotNull;
+import pl.olafcio.commons.stringscan.Pattern;
+import pl.olafcio.commons.stringscan.PatternSetup;
+import pl.olafcio.nocrash.crashpad.logs.LogCollection;
+import pl.olafcio.nocrash.crashpad.logs.LogType;
 import pl.olafcio.nocrash.crashpad.message.Message;
 import pl.olafcio.nocrash.crashpad.message.MessageCategory;
 import pl.olafcio.nocrash.crashpad.message.MessageType;
@@ -16,20 +20,18 @@ import pl.olafcio.nocrash.crashpad.modscanner.overviewer.*;
 import pl.olafcio.nocrash.crashpad.scanner.IScanner;
 import pl.olafcio.nocrash.crashpad.scanner.errors.*;
 import pl.olafcio.nocrash.crashpad.scanner.warnings.*;
+import pl.olafcio.commons.stringscan.PatternMatcher;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.function.Supplier;
 import java.util.jar.JarFile;
-import java.util.regex.Pattern;
 
 public final class NoCrashAction {
-    private String  logs;
-    private LogType logType;
-    private Path    logFile;
-
     private static final IScanner[] scanners
                    = new IScanner[]{
                             new ClassTweakerError(),
@@ -69,36 +71,29 @@ public final class NoCrashAction {
         new NoCrashAction();
     }
 
-    private String findMCVersion() {
-        var lines = this.logs.split("\n");
-
-        for (var line : lines) {
-            if (line.contains("Launching target 'forge_client' with arguments [--version,")) {
-                return line.substring(line.indexOf("Launching target 'forge_client' with arguments [--version, ") + 59).split(",")[0].trim();
-            } else if (line.contains("Loading Minecraft ")) {
-                return line.substring(line.indexOf("Loading Minecraft ") + 18).split(" ")[0];
-            }
-        }
-
-        return "[missingver-1]";
-    }
-
     public NoCrashAction() {
-        IO.println("[NoCrashAction/DEBUG] Reading logs");
-        readDebugLogs();
+        IO.println("[NoCrashAction/DEBUG] Setting up logs");
 
-        IO.println("[NoCrashAction/DEBUG] Normalizing logs");
-        this.logs = this.logs.replaceAll("\\r\\n|\\r", "\n");
+        logcol.putLogIfExists(LogType.LATEST, Path.of("logs/latest.log"));
+        logcol.putLogIfExists(LogType.DEBUG, Path.of("logs/debug.log"));
+        logcol.putLogIfExists(LogType.STDOUT, Path.of(".nocrash/stdout.log"));
+        logcol.putLogIfExists(LogType.STDERR, Path.of(".nocrash/stderr.log"));
 
-        IO.println("[NoCrashAction/DEBUG] Scanning");
-        if (this.logs.contains("Stopping!\n") && !this.logs.contains("[NoCrash] Preventing platform error GUI\n")) {
-            IO.println("[NoCrashAction/INFO] Minecraft's window seems to have been shown");
+        IO.println("[NoCrashAction/DEBUG] Starting initial scan");
+
+        var hasCrashed = checkAndHasCrashed();
+
+        if (Boolean.FALSE.equals(hasCrashed))
             return;
-        }
 
-        State.minecraft = findMCVersion();
+        IO.println("[NoCrashAction/DEBUG] Finding additional log files");
 
-        var window = new NoCrashWindow(logFile == null ? null : logFile.toFile(), logs);
+        findFile(".", "hs_err_pid[0-9]+\\.log", 1000 * 16, LogType.HS_ERR_PID);
+        findFile("crash-reports", ".*", 1000 * 16, LogType.CRASH_REPORT);
+
+        IO.println("[NoCrashAction/DEBUG] Starting GUI");
+
+        var window = new NoCrashWindow(logcol);
         var ambient = new NoCrashAmbient();
 
         new Thread(ambient::play, "NoCrash/Ambient").start();
@@ -107,7 +102,6 @@ public final class NoCrashAction {
         mapMods(window);
         overviewMods(window);
         scanMods(window);
-        hsErrPid(window);
 
         final int exrs = this.errors;
 
@@ -117,33 +111,68 @@ public final class NoCrashAction {
         });
     }
 
-    private void hsErrPid(NoCrashWindow window) {
-        final int exrs = this.errors;
+    private Boolean checkAndHasCrashed() {
+        var context = new PatternSetup();
 
-        window.race(() -> {
-            window.setState("Checking for hs_err_pid  ·  Errors found: %d".formatted(exrs));
-            window.setProgress(1f / 2);
+        context.addPattern("Stopping!\n");
+        context.addPattern("[NoCrash] Preventing platform error GUI\n");
+
+        context.addPattern(new ForgeMinecraftPattern());
+        context.addPattern(new FabricMinecraftPattern());
+
+        return logcol.forLogs(LogType.OUTPUT_LIKE, log -> {
+            try (var reader = new PatternMatcher<>(context, log::openInputStream)) {
+                boolean hadPrevention = false;
+                boolean hadGraceful = false;
+
+                while (true) {
+                    var a = reader.find();
+                    if (a == null)
+                        break;
+                    else if (a == 1)
+                        hadPrevention = true;
+                    else if (a == 0)
+                        hadGraceful = true;
+                }
+
+                if (!hadPrevention && hadGraceful) {
+                    IO.println("[NoCrashAction/INFO] Minecraft's window seems to have been shown");
+                    return false;
+                }
+            } catch (Exception ignored) {
+                // I don't even know what to say
+                return null;
+            }
+
+            return null;
         });
+    }
 
-        try (var files = Files.list(Path.of("."))) {
+    private final LogCollection logcol
+            = new LogCollection();
+
+    private void findFile(String directory, String regex, int maximumTime, LogType logType) {
+        var folder = Path.of(directory);
+
+        if (!Files.isDirectory(folder))
+            return;
+
+        try (var files = Files.list(folder)) {
             files.forEach(path -> {
                 try {
-                    if (path.getFileName().toString().matches("hs_err_pid[0-9]+\\.log") && System.currentTimeMillis() - Files.getLastModifiedTime(path).toMillis() < 1000*16) {
-                        errors++;
-
-                        window.addMessage(new Message(
-                                MessageType.CRITICAL,
-                                MessageCategory.JVM_ISSUE,
-                                "Your Minecraft might've not been assigned enough RAM (memory)",
-                                "%s file present".formatted(path.getFileName().toString())
-                        ));
+                    if (
+                            !Files.isDirectory(path) &&
+                            path.getFileName().toString().matches(regex) &&
+                            System.currentTimeMillis() - Files.getLastModifiedTime(path).toMillis() < maximumTime
+                    ) {
+                        logcol.putLog(logType, path);
                     }
                 } catch (IOException e) {
-                    new RuntimeException("Failed to scan hs_err_pid file: '%s'".formatted(path.getFileName().toString()), e).printStackTrace();
+                    new RuntimeException("Failed to scan file: '%s'".formatted(path.getFileName().toString()), e).printStackTrace();
                 }
             });
         } catch (IOException e) {
-            new RuntimeException("Failed to scan for hs_err_pid files", e).printStackTrace();
+            new RuntimeException("Failed to scan for... files ('%s')".formatted(regex), e).printStackTrace();
         }
     }
 
@@ -173,35 +202,40 @@ public final class NoCrashAction {
     private int errors = 0;
 
     private void scanLogs(NoCrashWindow window) {
-        int i = 1;
+        final int exrs = errors;
+
+        window.race(() -> {
+            window.setState("Scanning logs with %d scanners  ·  Errors found: %d".formatted(scanners.length, exrs));
+            window.setProgress(1F);
+        });
+
+        var context = new PatternSetup();
 
         for (var scanner : scanners) {
-            final int g = i;
-            final int exrs = errors;
+            context.addPattern(scanner.regex().split("[*(]", 2)[0], streamSupplier -> {
+                final String segment;
 
-            window.race(() -> {
-                window.setState("Scanning %d/%d  ·  Errors found: %d".formatted(g, scanners.length, exrs));
-                window.setProgress((float)g / scanners.length);
+                try (var stream = streamSupplier.get()) {
+                    segment = new String(stream.readNBytes(100), StandardCharsets.UTF_8);
+                }
+
+                var pattern = java.util.regex.Pattern.compile(scanner.regex(), java.util.regex.Pattern.MULTILINE);
+                var matcher = pattern.matcher(segment);
+
+                while (matcher.find()) {
+                    window.addMessage(scanner.message(matcher));
+                    errors++;
+                }
             });
-
-            var pattern = Pattern.compile(scanner.regex(), Pattern.MULTILINE);
-            var matcher = pattern.matcher(this.logs);
-
-            while (matcher.find()) {
-                window.addMessage(scanner.message(matcher));
-
-                errors++;
-
-                final int exrs2 = errors;
-
-                window.race(() -> {
-                    window.setState("Scanning %d/%d  ·  Errors found: %d".formatted(g, scanners.length, exrs2));
-                    window.setProgress((float)g / scanners.length);
-                });
-            }
-
-            i++;
         }
+
+        logcol.forLogs(LogType.MINECRAFT, log -> {
+            try (var reader = new PatternMatcher<>(context, log::openInputStream)) {
+                reader.scan();
+            } catch (Exception ignored) {
+                // I don't even know what to say
+            }
+        });
     }
 
     private final ArrayList<ModFile> modobjects
@@ -310,57 +344,39 @@ public final class NoCrashAction {
         }
     }
 
-    //===============//
-    // FETCHING LOGS //
-    //===============//
+    private static class FabricMinecraftPattern extends Pattern {
+        public FabricMinecraftPattern() {
+            super("Loading Minecraft ");
+        }
 
-    private void readDebugLogs() {
-        this.logType = LogType.DEBUG;
+        @Override
+        public void action(Supplier<InputStream> supplier) throws IOException {
+            try (var stream = supplier.get()) {
+                State.minecraft = new String(stream.readNBytes(16), StandardCharsets.UTF_8).trim().split(" ")[0];
+            }
+        }
 
-        try {
-            this.logFile = Path.of("./logs/debug.log");
-            this.logs = Files.readString(logFile, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            IO.println("[NoCrashAction/ERROR] unable to read debug.log  /" + e.getClass().getName());
-            IO.println("                      message:       " + e.getMessage());
-            IO.println("                      message/local: " + e.getLocalizedMessage());
-            IO.println("");
-
-            readLogs();
+        @Override
+        public boolean shouldReturnInFind() {
+            return false;
         }
     }
 
-    private void readLogs() {
-        this.logType = LogType.LATEST;
-
-        try {
-            this.logFile = Path.of("./logs/latest.log");
-            this.logs = Files.readString(logFile, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            IO.println("[NoCrashAction/ERROR] unable to read latest.log  /" + e.getClass().getName());
-            IO.println("                      message:       " + e.getMessage());
-            IO.println("                      message/local: " + e.getLocalizedMessage());
-            IO.println("");
-
-            readDummy();
+    private static class ForgeMinecraftPattern extends Pattern {
+        public ForgeMinecraftPattern() {
+            super("Launching target 'forge_client' with arguments [--version,");
         }
-    }
 
-    private void readDummy() {
-        this.logType = LogType.NONE;
-        this.logFile = null;
-        this.logs = "";
-    }
+        @Override
+        public void action(Supplier<InputStream> supplier) throws IOException {
+            try (var stream = supplier.get()) {
+                State.minecraft = new String(stream.readNBytes(16), StandardCharsets.UTF_8).split(",")[0].trim();
+            }
+        }
 
-    //=========//
-    // GETTERS //
-    //=========//
-
-    public String getLogs() {
-        return logs;
-    }
-
-    public LogType getLogType() {
-        return logType;
+        @Override
+        public boolean shouldReturnInFind() {
+            return false;
+        }
     }
 }

@@ -3,7 +3,9 @@ package pl.olafcio.nocrash.crashpad;
 import org.jetbrains.annotations.NotNull;
 import pl.olafcio.commons.hastebin.BinFile;
 import pl.olafcio.commons.hastebin.Hastebin;
-import pl.olafcio.nocrash.crashpad.logcensor.LogCensor;
+import pl.olafcio.nocrash.crashpad.logs.LogCensor;
+import pl.olafcio.nocrash.crashpad.logs.LogCollection;
+import pl.olafcio.nocrash.crashpad.logs.LogType;
 import pl.olafcio.nocrash.crashpad.message.FixType;
 import pl.olafcio.nocrash.crashpad.message.Message;
 import pl.olafcio.nocrash.crashpad.message.MessageType;
@@ -33,16 +35,28 @@ import java.util.function.UnaryOperator;
 public final class NoCrashWindow {
     private final Thread thread;
     private final File   logFile;
-    private final String logs;
+    private final LogCollection logcol;
 
-    public NoCrashWindow(File logFile, String logs) {
-        this.logs    = new LogCensor(logs).censor();
-        this.logFile = logFile;
+    public NoCrashWindow(LogCollection logcol) {
+        this.logcol = logcol;
+        this.logFile = logcol.getLog(LogType.STDOUT).getPath().toFile();
 
         this.thread = new Thread(this::show, "NoCrash/GUI");
         this.thread.setDaemon(false);
         this.thread.start();
     }
+
+//    private static String getReport(LogCollection logcol) {
+//        String censor;
+//
+//        try {
+//            censor = logcol.getLog(LogType.CRASH_REPORT).censor();
+//        } catch (IOException e) {
+//            censor = "[failed to read crash report]";
+//        }
+//
+//        return censor;
+//    }
 
     private final JLabel status
             = new JLabel("Initializing");
@@ -286,92 +300,17 @@ public final class NoCrashWindow {
                 if (res != JOptionPane.YES_OPTION)
                     return;
 
-                var files = new ArrayList<>();
                 var filesmsg = new ArrayList<String>();
 
-                files.add("logs/latest.log");
-                files.add("logs/debug.log");
-                files.add("logs/nocrash.log");
-
-                files.add(".nocrash/stdout.log");
-                files.add(".nocrash/stderr.log");
-
-                var noReport = new boolean[]{ true };
-                var reportFolder = Path.of("crash-reports");
-
-                if (Files.isDirectory(reportFolder)) {
-                    try (var reports = Files.list(reportFolder)) {
-                        reports.forEach(report -> {
-                            try {
-                                if (!Files.isDirectory(report) && System.currentTimeMillis() - Files.getLastModifiedTime(report).toMillis() < 13_000) {
-                                    files.add(report.toString());
-                                    noReport[0] = false;
-                                }
-                            } catch (IOException ex) {
-                                JOptionPane.showMessageDialog(
-                                        frame,
-                                        "Failed to upload file '%s' (I/O error); skipping\nTechnical information:\n\n".formatted(report.toString()) + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
-                                        "Unable to create a Discord message",
-                                        JOptionPane.WARNING_MESSAGE
-                                );
-                            }
-                        });
-                    } catch (IOException ex) {
-                        JOptionPane.showMessageDialog(
-                                frame,
-                                "Failed to find a crash report (I/O error); skipping\nTechnical information:\n\n" + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
-                                "Unable to create a Discord message",
-                                JOptionPane.WARNING_MESSAGE
-                        );
-                    }
-                }
-
-                try (var s = Files.list(Path.of("."))) {
-                    s.forEach(path -> {
-                        try {
-                            if (path.getFileName().toString().matches("hs_err_pid[0-9]+\\.log") && System.currentTimeMillis() - Files.getLastModifiedTime(path).toMillis() < 1000*16) {
-                                files.add(new Object[]{
-                                        path.toString(),
-                                        (UnaryOperator<String>) data -> data.split("------")[0]
-                                });
-                            }
-                        } catch (IOException ex) {
-                            JOptionPane.showMessageDialog(
-                                    frame,
-                                    "Failed to upload file '%s' (I/O error); skipping\nTechnical information:\n\n".formatted(path.toString()) + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
-                                    "Unable to create a Discord message",
-                                    JOptionPane.WARNING_MESSAGE
-                            );
-                        }
-                    });
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(
-                            frame,
-                            "Failed to find a hs_err_pid report (I/O error); skipping\nTechnical information:\n\n" + ex.getMessage() + "\n(" + ex.getClass().getSimpleName() + ")",
-                            "Unable to create a Discord message",
-                            JOptionPane.WARNING_MESSAGE
-                    );
-                }
-
-                for (var object : files) {
-                    final String file;
-                    final UnaryOperator<String> transformer;
-
-                    if (object instanceof String str) {
-                        file = str;
-                        transformer = UnaryOperator.identity();
-                    } else {
-                        file        = (String) ((Object[]) object)[0];
-                        transformer = (UnaryOperator<String>) ((Object[]) object)[1];
-                    }
-
-                    var path = Path.of(file);
+                for (var log : logcol.getLogTypes().entrySet()) {
+                    var path = log.getValue().getPath();
+                    var file = path.toString();
 
                     final String binID;
 
                     try {
                         binID = Hastebin.create(List.of(
-                                new BinFile(file, transformer.apply(new LogCensor(Files.readString(path, StandardCharsets.UTF_8)).censor()))
+                                new BinFile(file, log.getKey().additionalCensor(log.getValue().censor()))
                         ), false, System.currentTimeMillis()/1000 + 60*60*24*3);
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(
@@ -387,7 +326,7 @@ public final class NoCrashWindow {
                     filesmsg.add("**[%s](%s)**".formatted(file, "https://olafcio1.github.io/logviewer/?" + binID));
                 }
 
-                var message = "Minecraft crashed%s. Here are the relevant links:\n".formatted(noReport[0] ? " without a crash report" : "") +
+                var message = "Minecraft crashed%s. Here are the relevant links:\n".formatted(!logcol.isLogPresent(LogType.CRASH_REPORT) ? " without a crash report" : "") +
                               "\n" +
                               String.join(" ∕ ", filesmsg) +
                               "\n\n" +

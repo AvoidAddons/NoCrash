@@ -1,4 +1,4 @@
-package pl.olafcio.nocrash.crashpad.logcensor;
+package pl.olafcio.nocrash.crashpad.logs;
 
 public class LogCensor {
     private String logs;
