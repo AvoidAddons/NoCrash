@@ -42,6 +42,7 @@ public final class NoCrashAction {
                             new FMLSuspectedMods(),
                             new FMLEntrypointError(),
                             new FMLTypoError(),
+                            new FMLConfigError(),
                             new RegistryObjectError(),
                             new ItemDoesNotExistError()
                    };
